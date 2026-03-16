@@ -1,11 +1,8 @@
 /* ============================================================
    VideoForge – script.js
-   Utilise @ffmpeg/ffmpeg 0.12 (SharedArrayBuffer requis ou
-   fallback single-thread automatique)
+   Traitement 100% navigateur : Canvas 2D + MediaRecorder API
+   Aucune dépendance externe, fonctionne sur iOS et desktop.
    ============================================================ */
-
-const { FFmpeg } = FFmpegWASM;
-const { fetchFile, toBlobURL } = FFmpegUtil;
 
 // ─── État global ────────────────────────────────────────────
 const state = {
@@ -24,11 +21,9 @@ const state = {
 // ─── Refs DOM ───────────────────────────────────────────────
 const $ = id => document.getElementById(id);
 
-// Tabs
 const tabBtns   = document.querySelectorAll('.tab-btn');
 const tabPanes  = document.querySelectorAll('.tab-content');
 
-// Montage
 const dropZone       = $('drop-zone');
 const mainVideoInput = $('main-video-input');
 const browseBtn      = $('browse-btn');
@@ -45,7 +40,6 @@ const resultSection  = $('result-section');
 const resultVideo    = $('result-video');
 const downloadBtn    = $('download-btn');
 
-// Params – title
 const titleTextInput   = $('title-text');
 const styleBtns        = document.querySelectorAll('.style-btn');
 const titleDurationIn  = $('title-duration');
@@ -53,7 +47,6 @@ const durationDisplay  = $('duration-display');
 const titlePositionSel = $('title-position');
 const titlePreviewEl   = $('title-preview');
 
-// Params – sticker
 const stickerInput       = $('sticker-input');
 const stickerBrowse      = $('sticker-browse');
 const stickerDrop        = $('sticker-drop');
@@ -66,7 +59,6 @@ const stickerSizeDisplay = $('sticker-size-display');
 const stickerOpacityIn   = $('sticker-opacity');
 const stickerOpacityDisp = $('sticker-opacity-display');
 
-// Params – outro
 const outroInput       = $('outro-input');
 const outroBrowse      = $('outro-browse');
 const outroDrop        = $('outro-drop');
@@ -74,11 +66,9 @@ const outroPreviewWrap = $('outro-preview-wrap');
 const outroPreviewVid  = $('outro-preview');
 const outroRemove      = $('outro-remove');
 
-// Save
 const saveParamsBtn = $('save-params-btn');
 const saveFeedback  = $('save-feedback');
 
-// Summary
 const sumTitleVal    = $('sum-title-val');
 const sumStyleVal    = $('sum-style-val');
 const sumDurationVal = $('sum-duration-val');
@@ -97,8 +87,9 @@ tabBtns.forEach(btn => {
 
 // ─── MAIN VIDEO UPLOAD ───────────────────────────────────────
 browseBtn.addEventListener('click', () => mainVideoInput.click());
-dropZone.addEventListener('click', e => { if (e.target === dropZone || e.target.id === 'drop-inner') mainVideoInput.click(); });
-
+dropZone.addEventListener('click', e => {
+  if (e.target === dropZone || e.target.id === 'drop-inner') mainVideoInput.click();
+});
 dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
 dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
 dropZone.addEventListener('drop', e => {
@@ -107,15 +98,13 @@ dropZone.addEventListener('drop', e => {
   const f = e.dataTransfer.files[0];
   if (f && f.type.startsWith('video/')) setMainVideo(f);
 });
-
 mainVideoInput.addEventListener('change', () => {
   if (mainVideoInput.files[0]) setMainVideo(mainVideoInput.files[0]);
 });
 
 function setMainVideo(file) {
   state.mainVideoFile = file;
-  const url = URL.createObjectURL(file);
-  sourcePreview.src = url;
+  sourcePreview.src = URL.createObjectURL(file);
   previewSection.hidden = false;
   fileInfo.textContent = `${file.name}  •  ${(file.size / 1024 / 1024).toFixed(2)} Mo`;
   updateProcessBtn();
@@ -139,16 +128,12 @@ styleBtns.forEach(btn => {
 });
 
 function applyStyleToPreview(btn) {
-  // Copy inline styles from the chosen style button to the preview
-  const computed = btn.style;
-  titlePreviewEl.style.cssText = computed.cssText;
+  titlePreviewEl.style.cssText = btn.style.cssText;
   titlePreviewEl.style.fontSize = '1.4rem';
   titlePreviewEl.style.padding = '8px 16px';
   titlePreviewEl.style.borderRadius = '6px';
   titlePreviewEl.style.transition = 'all 0.3s';
 }
-
-// Init style preview
 applyStyleToPreview(document.querySelector('.style-btn.active'));
 
 titleDurationIn.addEventListener('input', () => {
@@ -157,14 +142,11 @@ titleDurationIn.addEventListener('input', () => {
   updateSummary();
 });
 
-titlePositionSel.addEventListener('change', () => {
-  state.titlePosition = titlePositionSel.value;
-});
+titlePositionSel.addEventListener('change', () => { state.titlePosition = titlePositionSel.value; });
 
 // ─── STICKER PARAMS ──────────────────────────────────────────
-stickerBrowse.addEventListener('click', (e) => { e.stopPropagation(); stickerInput.click(); });
+stickerBrowse.addEventListener('click', e => { e.stopPropagation(); stickerInput.click(); });
 stickerDrop.addEventListener('click', () => stickerInput.click());
-
 stickerInput.addEventListener('change', () => {
   if (stickerInput.files[0]) setSticker(stickerInput.files[0]);
 });
@@ -174,8 +156,7 @@ function setSticker(file) {
   stickerPreviewImg.src = URL.createObjectURL(file);
   stickerPreviewWrap.hidden = false;
   stickerDrop.hidden = true;
-  updateSummary();
-  updateProcessBtn();
+  updateSummary(); updateProcessBtn();
 }
 
 stickerRemove.addEventListener('click', () => {
@@ -184,26 +165,22 @@ stickerRemove.addEventListener('click', () => {
   stickerPreviewImg.src = '';
   stickerPreviewWrap.hidden = true;
   stickerDrop.hidden = false;
-  updateSummary();
-  updateProcessBtn();
+  updateSummary(); updateProcessBtn();
 });
 
 stickerPositionSel.addEventListener('change', () => { state.stickerPosition = stickerPositionSel.value; });
-
 stickerSizeIn.addEventListener('input', () => {
   state.stickerSize = parseInt(stickerSizeIn.value);
   stickerSizeDisplay.textContent = state.stickerSize + '%';
 });
-
 stickerOpacityIn.addEventListener('input', () => {
   state.stickerOpacity = parseInt(stickerOpacityIn.value);
   stickerOpacityDisp.textContent = state.stickerOpacity + '%';
 });
 
 // ─── OUTRO PARAMS ────────────────────────────────────────────
-outroBrowse.addEventListener('click', (e) => { e.stopPropagation(); outroInput.click(); });
+outroBrowse.addEventListener('click', e => { e.stopPropagation(); outroInput.click(); });
 outroDrop.addEventListener('click', () => outroInput.click());
-
 outroInput.addEventListener('change', () => {
   if (outroInput.files[0]) setOutro(outroInput.files[0]);
 });
@@ -213,8 +190,7 @@ function setOutro(file) {
   outroPreviewVid.src = URL.createObjectURL(file);
   outroPreviewWrap.hidden = false;
   outroDrop.hidden = true;
-  updateSummary();
-  updateProcessBtn();
+  updateSummary(); updateProcessBtn();
 }
 
 outroRemove.addEventListener('click', () => {
@@ -223,21 +199,16 @@ outroRemove.addEventListener('click', () => {
   outroPreviewVid.src = '';
   outroPreviewWrap.hidden = true;
   outroDrop.hidden = false;
-  updateSummary();
-  updateProcessBtn();
+  updateSummary(); updateProcessBtn();
 });
 
 // ─── SAVE PARAMS ─────────────────────────────────────────────
 saveParamsBtn.addEventListener('click', () => {
-  // Persist non-file state to localStorage
   const toSave = {
-    titleText:       state.titleText,
-    titleStyle:      state.titleStyle,
-    titleDuration:   state.titleDuration,
-    titlePosition:   state.titlePosition,
-    stickerPosition: state.stickerPosition,
-    stickerSize:     state.stickerSize,
-    stickerOpacity:  state.stickerOpacity,
+    titleText: state.titleText, titleStyle: state.titleStyle,
+    titleDuration: state.titleDuration, titlePosition: state.titlePosition,
+    stickerPosition: state.stickerPosition, stickerSize: state.stickerSize,
+    stickerOpacity: state.stickerOpacity,
   };
   localStorage.setItem('vf_params', JSON.stringify(toSave));
   saveFeedback.textContent = '✓ Sauvegardé !';
@@ -249,28 +220,25 @@ function loadSavedParams() {
   if (!raw) return;
   try {
     const p = JSON.parse(raw);
-    if (p.titleText)     { state.titleText = p.titleText; titleTextInput.value = p.titleText; titlePreviewEl.textContent = p.titleText; }
-    if (p.titleStyle) {
+    if (p.titleText)      { state.titleText = p.titleText; titleTextInput.value = p.titleText; titlePreviewEl.textContent = p.titleText; }
+    if (p.titleStyle)     {
       state.titleStyle = p.titleStyle;
-      styleBtns.forEach(b => {
-        b.classList.toggle('active', b.dataset.style === p.titleStyle);
-        if (b.dataset.style === p.titleStyle) applyStyleToPreview(b);
-      });
+      styleBtns.forEach(b => { b.classList.toggle('active', b.dataset.style === p.titleStyle); if (b.dataset.style === p.titleStyle) applyStyleToPreview(b); });
     }
-    if (p.titleDuration) { state.titleDuration = p.titleDuration; titleDurationIn.value = p.titleDuration; durationDisplay.textContent = p.titleDuration + ' s'; }
-    if (p.titlePosition) { state.titlePosition = p.titlePosition; titlePositionSel.value = p.titlePosition; }
-    if (p.stickerPosition) { state.stickerPosition = p.stickerPosition; stickerPositionSel.value = p.stickerPosition; }
-    if (p.stickerSize)   { state.stickerSize = p.stickerSize; stickerSizeIn.value = p.stickerSize; stickerSizeDisplay.textContent = p.stickerSize + '%'; }
-    if (p.stickerOpacity){ state.stickerOpacity = p.stickerOpacity; stickerOpacityIn.value = p.stickerOpacity; stickerOpacityDisp.textContent = p.stickerOpacity + '%'; }
+    if (p.titleDuration)  { state.titleDuration = p.titleDuration; titleDurationIn.value = p.titleDuration; durationDisplay.textContent = p.titleDuration + ' s'; }
+    if (p.titlePosition)  { state.titlePosition = p.titlePosition; titlePositionSel.value = p.titlePosition; }
+    if (p.stickerPosition){ state.stickerPosition = p.stickerPosition; stickerPositionSel.value = p.stickerPosition; }
+    if (p.stickerSize)    { state.stickerSize = p.stickerSize; stickerSizeIn.value = p.stickerSize; stickerSizeDisplay.textContent = p.stickerSize + '%'; }
+    if (p.stickerOpacity) { state.stickerOpacity = p.stickerOpacity; stickerOpacityIn.value = p.stickerOpacity; stickerOpacityDisp.textContent = p.stickerOpacity + '%'; }
     updateSummary();
   } catch(e) {}
 }
 loadSavedParams();
 
-// ─── SUMMARY ─────────────────────────────────────────────────
+// ─── SUMMARY & UTILS ─────────────────────────────────────────
 function updateSummary() {
   sumTitleVal.textContent    = state.titleText || '—';
-  sumStyleVal.textContent    = state.titleStyle || '—';
+  sumStyleVal.textContent    = state.titleStyle;
   sumDurationVal.textContent = state.titleDuration + ' s';
   sumStickerVal.textContent  = state.stickerFile ? state.stickerFile.name : '—';
   sumOutroVal.textContent    = state.outroFile   ? state.outroFile.name   : '—';
@@ -280,165 +248,165 @@ function updateProcessBtn() {
   processBtn.disabled = !state.mainVideoFile;
 }
 
-// ─── FFMPEG PROCESSING ───────────────────────────────────────
-
-let ffmpegInstance = null;
-
-async function getFFmpeg() {
-  if (ffmpegInstance) return ffmpegInstance;
-  const ff = new FFmpeg();
-  ff.on('log', ({ message }) => {
-    logBox.textContent += message + '\n';
-    logBox.scrollTop = logBox.scrollHeight;
-  });
-  ff.on('progress', ({ progress }) => {
-    const pct = Math.min(Math.round(progress * 100), 100);
-    progressFill.style.width = pct + '%';
-    progressText.textContent = `Traitement… ${pct}%`;
-  });
-
-  setProgress(5, 'Chargement de FFmpeg…');
-
-  // Utilise le core multi-thread si SharedArrayBuffer est disponible, sinon single-thread
-  const hasSAB = typeof SharedArrayBuffer !== 'undefined';
-  if (hasSAB) {
-    const mtURL = 'https://unpkg.com/@ffmpeg/core-mt@0.12.6/dist/umd';
-    await ff.load({
-      coreURL:   await toBlobURL(`${mtURL}/ffmpeg-core.js`,        'text/javascript'),
-      wasmURL:   await toBlobURL(`${mtURL}/ffmpeg-core.wasm`,      'application/wasm'),
-      workerURL: await toBlobURL(`${mtURL}/ffmpeg-core.worker.js`, 'text/javascript'),
-    });
-  } else {
-    const stURL = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd';
-    await ff.load({
-      coreURL: await toBlobURL(`${stURL}/ffmpeg-core.js`,   'text/javascript'),
-      wasmURL: await toBlobURL(`${stURL}/ffmpeg-core.wasm`, 'application/wasm'),
-    });
-  }
-  ffmpegInstance = ff;
-  return ff;
-}
+// ─── PROCESSING (Canvas + MediaRecorder) ─────────────────────
 
 processBtn.addEventListener('click', processVideo);
 
 async function processVideo() {
   if (!state.mainVideoFile) return;
 
-  // Reset UI
   processBtn.disabled = true;
   processLabel.textContent = '⏳ Traitement…';
   progressWrap.hidden = false;
   logBox.textContent = '';
   resultSection.hidden = true;
+  progressFill.style.background = 'linear-gradient(90deg, var(--accent), var(--accent2))';
 
   try {
-    const ff = await getFFmpeg();
+    setProgress(5, 'Préparation…');
 
-    setProgress(10, 'Chargement de la vidéo principale…');
-    await ff.writeFile('input.mp4', await fetchFile(state.mainVideoFile));
+    // ── Création des éléments vidéo ───────────────────────────
+    const mainVid = makeVideoEl();
+    mainVid.src = URL.createObjectURL(state.mainVideoFile);
+    await waitMeta(mainVid);
 
-    // ── Build filtergraph ──────────────────────────────────────
-    // We process in stages:
-    // 1. Overlay sticker on input → stickered.mp4
-    // 2. Add title text overlay  → titled.mp4
-    // 3. Concatenate with outro  → final.mp4
+    const W = mainVid.videoWidth  || 1280;
+    const H = mainVid.videoHeight || 720;
+    log(`Vidéo principale : ${W}×${H}, durée ${mainVid.duration.toFixed(1)} s`);
 
-    let currentInput = 'input.mp4';
-
-    // ── Stage 1: Sticker ──────────────────────────────────────
-    if (state.stickerFile) {
-      setProgress(20, 'Ajout du sticker…');
-      await ff.writeFile('sticker.png', await fetchFile(state.stickerFile));
-
-      // Compute overlay position
-      const pad = 20;
-      const pos = state.stickerPosition;
-      let overlayX, overlayY;
-      if (pos === 'top-left')     { overlayX = `${pad}`; overlayY = `${pad}`; }
-      else if (pos === 'top-right'){ overlayX = `main_w-overlay_w-${pad}`; overlayY = `${pad}`; }
-      else if (pos === 'bottom-left'){ overlayX = `${pad}`; overlayY = `main_h-overlay_h-${pad}`; }
-      else                         { overlayX = `main_w-overlay_w-${pad}`; overlayY = `main_h-overlay_h-${pad}`; }
-
-      const sizePct = state.stickerSize / 100;
-
-      const fc = `[1:v]scale=iw*${sizePct}:ih*${sizePct}[stk];[0:v][stk]overlay=${overlayX}:${overlayY}:format=auto[v];[v]format=yuv420p[out]`;
-
-      await ff.exec([
-        '-i', currentInput,
-        '-i', 'sticker.png',
-        '-filter_complex', fc,
-        '-map', '[out]', '-map', '0:a?',
-        '-c:v', 'libx264', '-preset', 'fast', '-crf', '23',
-        '-c:a', 'copy',
-        'stickered.mp4'
-      ]);
-      currentInput = 'stickered.mp4';
-    }
-
-    // ── Stage 2: Title text ───────────────────────────────────
-    if (state.titleText) {
-      setProgress(40, 'Ajout du titre…');
-
-      const { fontColor, fontSize, boxColor, shadowColor } = styleToFFmpegParams(state.titleStyle);
-      const yExpr = titleYExpr(state.titlePosition);
-      const dur   = state.titleDuration;
-
-      const drawtext = [
-        `drawtext=text='${escapeFfmpegText(state.titleText)}'`,
-        `fontcolor=${fontColor}`,
-        `fontsize=${fontSize}`,
-        `box=1:boxcolor=${boxColor}:boxborderw=14`,
-        `shadowcolor=${shadowColor}:shadowx=2:shadowy=2`,
-        `x=(w-text_w)/2`,
-        `y=${yExpr}`,
-        `enable='between(t,0,${dur})'`
-      ].join(':');
-
-      await ff.exec([
-        '-i', currentInput,
-        '-vf', drawtext,
-        '-c:v', 'libx264', '-preset', 'fast', '-crf', '23',
-        '-c:a', 'copy',
-        'titled.mp4'
-      ]);
-      currentInput = 'titled.mp4';
-    }
-
-    // ── Stage 3: Concat outro ─────────────────────────────────
+    let outroVid = null;
     if (state.outroFile) {
+      outroVid = makeVideoEl();
+      outroVid.src = URL.createObjectURL(state.outroFile);
+      await waitMeta(outroVid);
+      log(`Outro : durée ${outroVid.duration.toFixed(1)} s`);
+    }
+
+    // ── Canvas ────────────────────────────────────────────────
+    const canvas = document.createElement('canvas');
+    canvas.width = W; canvas.height = H;
+    const ctx = canvas.getContext('2d');
+
+    // ── Sticker ───────────────────────────────────────────────
+    let stickerImg = null;
+    if (state.stickerFile) {
+      stickerImg = await loadImg(URL.createObjectURL(state.stickerFile));
+      log('Sticker chargé');
+    }
+
+    // ── Audio via AudioContext ────────────────────────────────
+    let audioTracks = [];
+    let mainGain = null, outroGain = null;
+    try {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      const audioCtx = new AudioCtx();
+      await audioCtx.resume();
+
+      const dest  = audioCtx.createMediaStreamDestination();
+      mainGain    = audioCtx.createGain();
+      const mSrc  = audioCtx.createMediaElementSource(mainVid);
+      mSrc.connect(mainGain);
+      mainGain.connect(dest);
+
+      if (outroVid) {
+        outroGain = audioCtx.createGain();
+        outroGain.gain.value = 0; // silencieux au départ
+        const oSrc = audioCtx.createMediaElementSource(outroVid);
+        oSrc.connect(outroGain);
+        outroGain.connect(dest);
+      }
+
+      audioTracks = dest.stream.getAudioTracks();
+      log('Audio : OK');
+    } catch (e) {
+      log('Audio non capturé : ' + e.message);
+    }
+
+    // ── MediaRecorder ─────────────────────────────────────────
+    const mimeType = pickMime();
+    log('Format de sortie : ' + (mimeType || 'webm (défaut)'));
+
+    const canvasStream = canvas.captureStream(30);
+    const stream = new MediaStream([
+      ...canvasStream.getVideoTracks(),
+      ...audioTracks,
+    ]);
+
+    const recOpts = { videoBitsPerSecond: 6_000_000 };
+    if (mimeType) recOpts.mimeType = mimeType;
+    const recorder = new MediaRecorder(stream, recOpts);
+    const chunks = [];
+    recorder.ondataavailable = e => { if (e.data && e.data.size > 0) chunks.push(e.data); };
+
+    // ── Boucle de rendu ───────────────────────────────────────
+    let animId   = null;
+    let activeVid = null;
+
+    function drawFrame() {
+      if (activeVid && activeVid.readyState >= 2) {
+        ctx.drawImage(activeVid, 0, 0, W, H);
+        if (stickerImg) drawSticker(ctx, stickerImg, W, H);
+        const isMain = activeVid === mainVid;
+        if (isMain && state.titleText && activeVid.currentTime <= state.titleDuration) {
+          drawTitle(ctx, state.titleText, state.titleStyle, state.titlePosition, W, H);
+        }
+      }
+      animId = requestAnimationFrame(drawFrame);
+    }
+    const stopDraw = () => { cancelAnimationFrame(animId); animId = null; };
+
+    // ── Démarrage ─────────────────────────────────────────────
+    ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H);
+    recorder.start(200);
+    setProgress(10, 'Lecture de la vidéo principale…');
+
+    // Lecture vidéo principale
+    activeVid = mainVid;
+    drawFrame();
+
+    mainVid.ontimeupdate = () => {
+      const pct = 10 + (mainVid.currentTime / mainVid.duration) * (outroVid ? 55 : 80);
+      setProgress(Math.round(pct), `Principale : ${fmt(mainVid.currentTime)} / ${fmt(mainVid.duration)}`);
+    };
+
+    await mainVid.play();
+    await waitEnd(mainVid);
+    stopDraw();
+    log('Vidéo principale terminée.');
+
+    // ── Outro ─────────────────────────────────────────────────
+    if (outroVid) {
       setProgress(65, 'Ajout de l\'outro…');
-      await ff.writeFile('outro.mp4', await fetchFile(state.outroFile));
+      if (mainGain)  mainGain.gain.value  = 0;
+      if (outroGain) outroGain.gain.value = 1;
 
-      // Re-encode both to same params then concat
-      await ff.exec(['-i', currentInput, '-c:v', 'libx264', '-preset', 'fast', '-crf', '23', '-c:a', 'aac', '-ar', '44100', '-ac', '2', 'main_norm.mp4']);
-      await ff.exec(['-i', 'outro.mp4',  '-c:v', 'libx264', '-preset', 'fast', '-crf', '23', '-c:a', 'aac', '-ar', '44100', '-ac', '2', 'outro_norm.mp4']);
+      activeVid = outroVid;
+      drawFrame();
 
-      // Write concat list
-      await ff.writeFile('list.txt', 'file main_norm.mp4\nfile outro_norm.mp4\n');
+      outroVid.ontimeupdate = () => {
+        const pct = 65 + (outroVid.currentTime / outroVid.duration) * 25;
+        setProgress(Math.round(pct), `Outro : ${fmt(outroVid.currentTime)} / ${fmt(outroVid.duration)}`);
+      };
 
-      await ff.exec([
-        '-f', 'concat', '-safe', '0',
-        '-i', 'list.txt',
-        '-c', 'copy',
-        'final.mp4'
-      ]);
-      currentInput = 'final.mp4';
+      await outroVid.play();
+      await waitEnd(outroVid);
+      stopDraw();
+      log('Outro terminée.');
     }
 
-    setProgress(90, 'Finalisation…');
+    // ── Finalisation ──────────────────────────────────────────
+    setProgress(93, 'Finalisation…');
+    recorder.stop();
+    await waitStop(recorder);
 
-    // If no processing was done at all, just copy input
-    if (currentInput === 'input.mp4') {
-      await ff.exec(['-i', 'input.mp4', '-c', 'copy', 'final.mp4']);
-      currentInput = 'final.mp4';
-    }
+    const ext  = (mimeType || '').includes('mp4') ? 'mp4' : 'webm';
+    const blob = new Blob(chunks, { type: mimeType || 'video/webm' });
+    log(`Fichier final : ${(blob.size / 1024 / 1024).toFixed(2)} Mo (.${ext})`);
 
-    const data = await ff.readFile(currentInput);
-    const blob = new Blob([data.buffer], { type: 'video/mp4' });
-    const url  = URL.createObjectURL(blob);
-
+    const url = URL.createObjectURL(blob);
     resultVideo.src = url;
     downloadBtn.href = url;
+    downloadBtn.download = 'video_finale.' + ext;
     resultSection.hidden = false;
     resultSection.scrollIntoView({ behavior: 'smooth' });
 
@@ -448,43 +416,140 @@ async function processVideo() {
   } catch (err) {
     console.error(err);
     setProgress(0, '❌ Erreur : ' + err.message);
-    logBox.textContent += '\n\nErreur : ' + err.message;
+    log('ERREUR : ' + err.message);
   } finally {
     processBtn.disabled = false;
     processLabel.textContent = '⚡ Générer la vidéo';
   }
 }
 
+// ─── Rendu canvas ─────────────────────────────────────────────
+
+const TITLE_STYLES = {
+  'bold-white': { color: '#ffffff', shadow: 'rgba(0,0,0,0.9)', bg: 'rgba(0,0,0,0.55)',   font: 'bold',    family: 'Arial, sans-serif'          },
+  'neon-green': { color: '#39ff14', shadow: '#39ff14',          bg: 'rgba(0,0,0,0.7)',   font: 'bold',    family: 'Arial, sans-serif'          },
+  'cinema':     { color: '#f5c518', shadow: '#000000',          bg: 'rgba(0,0,0,0.85)',  font: 'bold',    family: 'Georgia, serif'             },
+  'minimal':    { color: '#eeeeee', shadow: 'rgba(0,0,0,0.3)',  bg: 'rgba(51,51,51,0.4)',font: '300',     family: 'Arial, sans-serif'          },
+  'fire':       { color: '#ff4500', shadow: '#ff6600',          bg: 'rgba(0,0,0,0.8)',   font: 'bold',    family: '"Arial Black", sans-serif'  },
+  'ice':        { color: '#00cfff', shadow: '#00cfff',          bg: 'rgba(0,0,26,0.75)', font: 'bold',    family: 'Arial, sans-serif'          },
+};
+
+function drawTitle(ctx, text, style, position, W, H) {
+  const s = TITLE_STYLES[style] || TITLE_STYLES['bold-white'];
+  const fontSize = Math.max(24, Math.round(W / 16));
+  ctx.save();
+  ctx.font = `${s.font} ${fontSize}px ${s.family}`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+
+  const tw  = ctx.measureText(text).width;
+  const th  = fontSize * 1.4;
+  const pad = Math.round(fontSize * 0.55);
+
+  let cy;
+  if (position === 'top')    cy = H * 0.10;
+  else if (position === 'bottom') cy = H * 0.88;
+  else cy = H / 2;
+
+  // Box
+  ctx.fillStyle = s.bg;
+  ctx.beginPath();
+  roundRect(ctx, W / 2 - tw / 2 - pad, cy - th / 2 - pad / 2, tw + pad * 2, th + pad, 14);
+  ctx.fill();
+
+  // Glow/shadow
+  const isGlow = style === 'neon-green' || style === 'fire' || style === 'ice';
+  ctx.shadowColor = s.shadow;
+  ctx.shadowBlur  = isGlow ? 22 : 5;
+  ctx.shadowOffsetX = isGlow ? 0 : 2;
+  ctx.shadowOffsetY = isGlow ? 0 : 2;
+
+  ctx.fillStyle = s.color;
+  ctx.fillText(text, W / 2, cy);
+  ctx.restore();
+}
+
+function drawSticker(ctx, img, W, H) {
+  const sw  = (state.stickerSize / 100) * W;
+  const sh  = sw / (img.naturalWidth / img.naturalHeight);
+  const pad = Math.round(W * 0.02);
+  const pos = state.stickerPosition;
+  const x = pos.includes('right')  ? W - sw - pad : pad;
+  const y = pos.includes('bottom') ? H - sh - pad : pad;
+
+  ctx.save();
+  ctx.globalAlpha = state.stickerOpacity / 100;
+  ctx.drawImage(img, x, y, sw, sh);
+  ctx.restore();
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y,     x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x,     y + h, r);
+  ctx.arcTo(x,     y + h, x,     y,     r);
+  ctx.arcTo(x,     y,     x + w, y,     r);
+  ctx.closePath();
+}
+
 // ─── Helpers ─────────────────────────────────────────────────
 
+function makeVideoEl() {
+  const v = document.createElement('video');
+  v.playsInline = true;
+  v.preload = 'auto';
+  return v;
+}
+
+function loadImg(src) {
+  return new Promise((res, rej) => {
+    const img = new Image();
+    img.onload = () => res(img);
+    img.onerror = rej;
+    img.src = src;
+  });
+}
+
+function waitMeta(video) {
+  return new Promise((res, rej) => {
+    if (video.readyState >= 1) { res(); return; }
+    video.onloadedmetadata = res;
+    video.onerror = () => rej(new Error('Impossible de lire la vidéo'));
+  });
+}
+
+function waitEnd(video) {
+  return new Promise(res => { video.onended = res; });
+}
+
+function waitStop(recorder) {
+  return new Promise(res => { recorder.onstop = res; });
+}
+
+function pickMime() {
+  const list = [
+    'video/mp4;codecs=avc1.42E01E,mp4a.40.2',
+    'video/mp4;codecs=avc1',
+    'video/mp4',
+    'video/webm;codecs=vp9,opus',
+    'video/webm;codecs=vp8,opus',
+    'video/webm',
+  ];
+  return list.find(t => MediaRecorder.isTypeSupported(t)) || '';
+}
+
 function setProgress(pct, msg) {
-  progressFill.style.width = pct + '%';
+  progressFill.style.width = Math.min(pct, 100) + '%';
   progressText.textContent = msg;
 }
 
-function escapeFfmpegText(str) {
-  return str
-    .replace(/\\/g, '\\\\')
-    .replace(/'/g,  "\\'")
-    .replace(/:/g,  '\\:')
-    .replace(/\[/g, '\\[')
-    .replace(/\]/g, '\\]');
+function log(msg) {
+  logBox.textContent += msg + '\n';
+  logBox.scrollTop = logBox.scrollHeight;
 }
 
-function titleYExpr(position) {
-  if (position === 'top')    return '(h*0.08)';
-  if (position === 'bottom') return '(h*0.85)';
-  return '(h-text_h)/2'; // center
-}
-
-function styleToFFmpegParams(style) {
-  const map = {
-    'bold-white': { fontColor: 'white',   fontSize: 64, boxColor: 'black@0.5',   shadowColor: 'black@0.8' },
-    'neon-green': { fontColor: '0x39ff14',fontSize: 64, boxColor: 'black@0.7',   shadowColor: '0x39ff14@0.9' },
-    'cinema':     { fontColor: '0xf5c518',fontSize: 60, boxColor: 'black@0.85',  shadowColor: 'black@0.9' },
-    'minimal':    { fontColor: 'white',   fontSize: 56, boxColor: '0x333333@0.4',shadowColor: 'black@0.3' },
-    'fire':       { fontColor: '0xff4500',fontSize: 66, boxColor: 'black@0.8',   shadowColor: '0xff4500@0.8' },
-    'ice':        { fontColor: '0x00cfff',fontSize: 64, boxColor: 'black@0.75',  shadowColor: '0x00cfff@0.7' },
-  };
-  return map[style] || map['bold-white'];
+function fmt(sec) {
+  const m = Math.floor(sec / 60);
+  const s = Math.floor(sec % 60).toString().padStart(2, '0');
+  return `${m}:${s}`;
 }
