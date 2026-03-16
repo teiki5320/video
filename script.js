@@ -124,19 +124,28 @@ styleBtns.forEach(btn => {
     styleBtns.forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     state.titleStyle = btn.dataset.style;
-    applyStyleToPreview(btn);
+    updatePreview();
     updateSummary();
   });
 });
 
-function applyStyleToPreview(btn) {
-  titlePreviewEl.style.cssText = btn.style.cssText;
-  titlePreviewEl.style.fontSize = '1.4rem';
-  titlePreviewEl.style.padding = '8px 16px';
-  titlePreviewEl.style.borderRadius = '6px';
-  titlePreviewEl.style.transition = 'all 0.3s';
+function updatePreview() {
+  const s = TITLE_STYLES[state.titleStyle] || TITLE_STYLES['bold-white'];
+  const family = state.fontOverride || s.family;
+  const glow = s.glow ? `0 0 14px ${s.shadow}, 0 0 30px ${s.shadow}` : `2px 2px 4px ${s.shadow}`;
+  titlePreviewEl.style.cssText = '';
+  titlePreviewEl.style.color       = s.color;
+  titlePreviewEl.style.background  = s.bg;
+  titlePreviewEl.style.fontFamily  = family;
+  titlePreviewEl.style.fontWeight  = s.font;
+  titlePreviewEl.style.textShadow  = glow;
+  titlePreviewEl.style.fontSize    = '1.4rem';
+  titlePreviewEl.style.padding     = '8px 20px';
+  titlePreviewEl.style.borderRadius= '6px';
+  titlePreviewEl.style.transition  = 'all 0.3s';
+  titlePreviewEl.style.display     = 'inline-block';
 }
-applyStyleToPreview(document.querySelector('.style-btn.active'));
+updatePreview();
 
 titleDurationIn.addEventListener('input', () => {
   state.titleDuration = parseFloat(titleDurationIn.value);
@@ -148,9 +157,7 @@ titlePositionSel.addEventListener('change', () => { state.titlePosition = titleP
 
 fontOverrideSel.addEventListener('change', () => {
   state.fontOverride = fontOverrideSel.value;
-  // Update preview font
-  if (state.fontOverride) titlePreviewEl.style.fontFamily = state.fontOverride;
-  else applyStyleToPreview(document.querySelector('.style-btn.active'));
+  updatePreview();
 });
 
 // ─── STICKER PARAMS ──────────────────────────────────────────
@@ -233,7 +240,7 @@ function loadSavedParams() {
     if (p.titleText)      { state.titleText = p.titleText; titleTextInput.value = p.titleText; titlePreviewEl.textContent = p.titleText; }
     if (p.titleStyle)     {
       state.titleStyle = p.titleStyle;
-      styleBtns.forEach(b => { b.classList.toggle('active', b.dataset.style === p.titleStyle); if (b.dataset.style === p.titleStyle) applyStyleToPreview(b); });
+      styleBtns.forEach(b => b.classList.toggle('active', b.dataset.style === p.titleStyle));
     }
     if (p.titleDuration)  { state.titleDuration = p.titleDuration; titleDurationIn.value = p.titleDuration; durationDisplay.textContent = p.titleDuration + ' s'; }
     if (p.titlePosition)  { state.titlePosition = p.titlePosition; titlePositionSel.value = p.titlePosition; }
@@ -241,6 +248,7 @@ function loadSavedParams() {
     if (p.stickerPosition){ state.stickerPosition = p.stickerPosition; stickerPositionSel.value = p.stickerPosition; }
     if (p.stickerSize)    { state.stickerSize = p.stickerSize; stickerSizeIn.value = p.stickerSize; stickerSizeDisplay.textContent = p.stickerSize + '%'; }
     if (p.stickerOpacity) { state.stickerOpacity = p.stickerOpacity; stickerOpacityIn.value = p.stickerOpacity; stickerOpacityDisp.textContent = p.stickerOpacity + '%'; }
+    updatePreview();
     updateSummary();
   } catch(e) {}
 }
