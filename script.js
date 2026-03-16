@@ -130,20 +130,15 @@ styleBtns.forEach(btn => {
 });
 
 function updatePreview() {
-  const s = TITLE_STYLES[state.titleStyle] || TITLE_STYLES['bold-white'];
-  const family = state.fontOverride || s.family;
-  const glow = s.glow ? `0 0 14px ${s.shadow}, 0 0 30px ${s.shadow}` : `2px 2px 4px ${s.shadow}`;
-  titlePreviewEl.style.cssText = '';
-  titlePreviewEl.style.color       = s.color;
-  titlePreviewEl.style.background  = s.bg;
-  titlePreviewEl.style.fontFamily  = family;
-  titlePreviewEl.style.fontWeight  = s.font;
-  titlePreviewEl.style.textShadow  = glow;
-  titlePreviewEl.style.fontSize    = '1.4rem';
-  titlePreviewEl.style.padding     = '8px 20px';
-  titlePreviewEl.style.borderRadius= '6px';
-  titlePreviewEl.style.transition  = 'all 0.3s';
-  titlePreviewEl.style.display     = 'inline-block';
+  const btn = document.querySelector(`.style-btn[data-style="${state.titleStyle}"]`);
+  if (!btn) return;
+  titlePreviewEl.style.cssText = btn.style.cssText;
+  if (state.fontOverride) titlePreviewEl.style.fontFamily = state.fontOverride;
+  titlePreviewEl.style.fontSize     = '1.4rem';
+  titlePreviewEl.style.padding      = '8px 20px';
+  titlePreviewEl.style.borderRadius = '6px';
+  titlePreviewEl.style.transition   = 'all 0.3s';
+  titlePreviewEl.style.display      = 'inline-block';
 }
 updatePreview();
 
