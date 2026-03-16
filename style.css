@@ -277,15 +277,21 @@ select option { background: var(--surface2); }
 .style-picker {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 8px;
+  gap: 7px;
+  max-height: 340px;
+  overflow-y: auto;
+  padding-right: 4px;
 }
 .style-btn {
-  padding: 10px 8px;
+  padding: 9px 8px;
   border-radius: 8px;
   cursor: pointer;
-  font-size: 0.88rem;
+  font-size: 0.82rem;
   font-weight: 600;
   transition: transform 0.1s, box-shadow 0.2s;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .style-btn:hover { transform: scale(1.03); }
 .style-btn.active { box-shadow: 0 0 0 3px var(--accent); }

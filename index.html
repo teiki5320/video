@@ -4,6 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>VideoForge – Montage Auto</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Courier+Prime:wght@400;700&family=Dancing+Script:wght@700&family=Exo+2:wght@400;800&family=Oswald:wght@700&family=Pacifico&family=Permanent+Marker&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -121,7 +124,55 @@
             style="color:#00cfff;background:#001a2e;border:2px solid #00cfff;text-shadow:0 0 10px #00cfff">
             ❄ Ice
           </button>
+          <button class="style-btn" data-style="retro"
+            style="font-family:'Oswald',sans-serif;color:#ff8c00;background:#1a0d00;border:2px solid #ff8c00;letter-spacing:2px">
+            Retro
+          </button>
+          <button class="style-btn" data-style="luxury"
+            style="font-family:'Playfair Display',serif;color:#d4af37;background:#0a0a0a;border:2px solid #d4af37;letter-spacing:3px">
+            ✦ Luxury
+          </button>
+          <button class="style-btn" data-style="sport"
+            style="font-family:'Bebas Neue',sans-serif;color:#fff;background:#cc0000;border:2px solid #ff3333;letter-spacing:3px">
+            SPORT
+          </button>
+          <button class="style-btn" data-style="horror"
+            style="font-family:'Permanent Marker',cursive;color:#cc0000;background:#050000;border:2px solid #660000;text-shadow:0 0 12px #cc0000">
+            🩸 Horror
+          </button>
+          <button class="style-btn" data-style="pastel"
+            style="font-family:'Pacifico',cursive;color:#ff9de2;background:#2d0a2a;border:2px solid #ff9de2">
+            🌸 Pastel
+          </button>
+          <button class="style-btn" data-style="matrix"
+            style="font-family:'Courier Prime',monospace;color:#00ff41;background:#000a00;border:2px solid #00ff41;text-shadow:0 0 8px #00ff41">
+            [Matrix]
+          </button>
+          <button class="style-btn" data-style="sunset"
+            style="font-family:'Exo 2',sans-serif;color:#ff6b35;background:#1a0020;border:2px solid #ff6b35;font-weight:800">
+            🌅 Sunset
+          </button>
+          <button class="style-btn" data-style="writer"
+            style="font-family:'Courier Prime',monospace;color:#e8dcc8;background:#1e1408;border:2px solid #7a6a4a">
+            Typewriter
+          </button>
         </div>
+
+        <label for="font-override">Police (override du style)</label>
+        <select id="font-override">
+          <option value="">— Défaut du style —</option>
+          <option value="Arial, sans-serif">Arial</option>
+          <option value="'Oswald', sans-serif">Oswald – Impactant</option>
+          <option value="'Bebas Neue', sans-serif">Bebas Neue – Sport</option>
+          <option value="'Pacifico', cursive">Pacifico – Fun</option>
+          <option value="'Playfair Display', serif">Playfair Display – Élégant</option>
+          <option value="'Courier Prime', monospace">Courier Prime – Retro</option>
+          <option value="'Permanent Marker', cursive">Permanent Marker – Graffiti</option>
+          <option value="'Exo 2', sans-serif">Exo 2 – Tech/Sci-Fi</option>
+          <option value="'Dancing Script', cursive">Dancing Script – Cursive</option>
+          <option value="Impact, sans-serif">Impact – Meme</option>
+          <option value="Georgia, serif">Georgia – Classique</option>
+        </select>
 
         <label for="title-duration">Durée d'affichage du titre (secondes)</label>
         <div class="range-row">

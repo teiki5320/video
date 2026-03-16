@@ -13,6 +13,7 @@ const state = {
   titleStyle: 'bold-white',
   titleDuration: 5,
   titlePosition: 'center',
+  fontOverride: '',
   stickerPosition: 'top-right',
   stickerSize: 15,
   stickerOpacity: 90,
@@ -45,6 +46,7 @@ const styleBtns        = document.querySelectorAll('.style-btn');
 const titleDurationIn  = $('title-duration');
 const durationDisplay  = $('duration-display');
 const titlePositionSel = $('title-position');
+const fontOverrideSel  = $('font-override');
 const titlePreviewEl   = $('title-preview');
 
 const stickerInput       = $('sticker-input');
@@ -144,6 +146,13 @@ titleDurationIn.addEventListener('input', () => {
 
 titlePositionSel.addEventListener('change', () => { state.titlePosition = titlePositionSel.value; });
 
+fontOverrideSel.addEventListener('change', () => {
+  state.fontOverride = fontOverrideSel.value;
+  // Update preview font
+  if (state.fontOverride) titlePreviewEl.style.fontFamily = state.fontOverride;
+  else applyStyleToPreview(document.querySelector('.style-btn.active'));
+});
+
 // ─── STICKER PARAMS ──────────────────────────────────────────
 stickerBrowse.addEventListener('click', e => { e.stopPropagation(); stickerInput.click(); });
 stickerDrop.addEventListener('click', () => stickerInput.click());
@@ -207,6 +216,7 @@ saveParamsBtn.addEventListener('click', () => {
   const toSave = {
     titleText: state.titleText, titleStyle: state.titleStyle,
     titleDuration: state.titleDuration, titlePosition: state.titlePosition,
+    fontOverride: state.fontOverride,
     stickerPosition: state.stickerPosition, stickerSize: state.stickerSize,
     stickerOpacity: state.stickerOpacity,
   };
@@ -227,6 +237,7 @@ function loadSavedParams() {
     }
     if (p.titleDuration)  { state.titleDuration = p.titleDuration; titleDurationIn.value = p.titleDuration; durationDisplay.textContent = p.titleDuration + ' s'; }
     if (p.titlePosition)  { state.titlePosition = p.titlePosition; titlePositionSel.value = p.titlePosition; }
+    if (p.fontOverride !== undefined) { state.fontOverride = p.fontOverride; fontOverrideSel.value = p.fontOverride; }
     if (p.stickerPosition){ state.stickerPosition = p.stickerPosition; stickerPositionSel.value = p.stickerPosition; }
     if (p.stickerSize)    { state.stickerSize = p.stickerSize; stickerSizeIn.value = p.stickerSize; stickerSizeDisplay.textContent = p.stickerSize + '%'; }
     if (p.stickerOpacity) { state.stickerOpacity = p.stickerOpacity; stickerOpacityIn.value = p.stickerOpacity; stickerOpacityDisp.textContent = p.stickerOpacity + '%'; }
@@ -263,7 +274,9 @@ async function processVideo() {
   progressFill.style.background = 'linear-gradient(90deg, var(--accent), var(--accent2))';
 
   try {
-    setProgress(5, 'Préparation…');
+    setProgress(5, 'Chargement des polices…');
+    await document.fonts.ready;
+    log('Polices prêtes');
 
     // ── Création des éléments vidéo ───────────────────────────
     const mainVid = makeVideoEl();
@@ -426,19 +439,28 @@ async function processVideo() {
 // ─── Rendu canvas ─────────────────────────────────────────────
 
 const TITLE_STYLES = {
-  'bold-white': { color: '#ffffff', shadow: 'rgba(0,0,0,0.9)', bg: 'rgba(0,0,0,0.55)',   font: 'bold',    family: 'Arial, sans-serif'          },
-  'neon-green': { color: '#39ff14', shadow: '#39ff14',          bg: 'rgba(0,0,0,0.7)',   font: 'bold',    family: 'Arial, sans-serif'          },
-  'cinema':     { color: '#f5c518', shadow: '#000000',          bg: 'rgba(0,0,0,0.85)',  font: 'bold',    family: 'Georgia, serif'             },
-  'minimal':    { color: '#eeeeee', shadow: 'rgba(0,0,0,0.3)',  bg: 'rgba(51,51,51,0.4)',font: '300',     family: 'Arial, sans-serif'          },
-  'fire':       { color: '#ff4500', shadow: '#ff6600',          bg: 'rgba(0,0,0,0.8)',   font: 'bold',    family: '"Arial Black", sans-serif'  },
-  'ice':        { color: '#00cfff', shadow: '#00cfff',          bg: 'rgba(0,0,26,0.75)', font: 'bold',    family: 'Arial, sans-serif'          },
+  'bold-white': { color: '#ffffff', shadow: 'rgba(0,0,0,0.9)', bg: 'rgba(0,0,0,0.55)',    font: '700',    family: 'Arial, sans-serif',                      glow: false },
+  'neon-green': { color: '#39ff14', shadow: '#39ff14',          bg: 'rgba(0,0,0,0.7)',    font: '700',    family: 'Arial, sans-serif',                      glow: true  },
+  'cinema':     { color: '#f5c518', shadow: '#000000',          bg: 'rgba(0,0,0,0.85)',   font: '700',    family: 'Georgia, serif',                         glow: false },
+  'minimal':    { color: '#eeeeee', shadow: 'rgba(0,0,0,0.3)',  bg: 'rgba(51,51,51,0.4)', font: '300',    family: 'Arial, sans-serif',                      glow: false },
+  'fire':       { color: '#ff4500', shadow: '#ff6600',          bg: 'rgba(0,0,0,0.8)',    font: '700',    family: '"Arial Black", sans-serif',              glow: true  },
+  'ice':        { color: '#00cfff', shadow: '#00cfff',          bg: 'rgba(0,0,26,0.75)',  font: '700',    family: 'Arial, sans-serif',                      glow: true  },
+  'retro':      { color: '#ff8c00', shadow: '#8b4500',          bg: 'rgba(26,13,0,0.85)', font: '700',    family: '"Oswald", Impact, sans-serif',            glow: false },
+  'luxury':     { color: '#d4af37', shadow: '#7a5c00',          bg: 'rgba(8,8,8,0.92)',   font: '700',    family: '"Playfair Display", Georgia, serif',      glow: false },
+  'sport':      { color: '#ffffff', shadow: '#990000',          bg: 'rgba(190,0,0,0.88)', font: '700',    family: '"Bebas Neue", Impact, sans-serif',        glow: false },
+  'horror':     { color: '#cc0000', shadow: '#660000',          bg: 'rgba(5,0,0,0.92)',   font: '700',    family: '"Permanent Marker", cursive',             glow: true  },
+  'pastel':     { color: '#ff9de2', shadow: '#8b3a7a',          bg: 'rgba(45,10,42,0.75)',font: '700',    family: '"Pacifico", cursive',                    glow: false },
+  'matrix':     { color: '#00ff41', shadow: '#003b00',          bg: 'rgba(0,8,0,0.92)',   font: '600',    family: '"Courier Prime", Courier, monospace',     glow: true  },
+  'sunset':     { color: '#ff6b35', shadow: '#c0392b',          bg: 'rgba(20,0,30,0.8)',  font: '800',    family: '"Exo 2", Arial, sans-serif',              glow: false },
+  'writer':     { color: '#e8dcc8', shadow: '#5a4a3a',          bg: 'rgba(30,20,8,0.88)', font: 'normal', family: '"Courier Prime", Courier, monospace',     glow: false },
 };
 
 function drawTitle(ctx, text, style, position, W, H) {
   const s = TITLE_STYLES[style] || TITLE_STYLES['bold-white'];
+  const family = state.fontOverride || s.family;
   const fontSize = Math.max(24, Math.round(W / 16));
   ctx.save();
-  ctx.font = `${s.font} ${fontSize}px ${s.family}`;
+  ctx.font = `${s.font} ${fontSize}px ${family}`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
 
@@ -447,22 +469,21 @@ function drawTitle(ctx, text, style, position, W, H) {
   const pad = Math.round(fontSize * 0.55);
 
   let cy;
-  if (position === 'top')    cy = H * 0.10;
+  if (position === 'top')         cy = H * 0.10;
   else if (position === 'bottom') cy = H * 0.88;
-  else cy = H / 2;
+  else                            cy = H / 2;
 
-  // Box
+  // Background box
   ctx.fillStyle = s.bg;
   ctx.beginPath();
   roundRect(ctx, W / 2 - tw / 2 - pad, cy - th / 2 - pad / 2, tw + pad * 2, th + pad, 14);
   ctx.fill();
 
-  // Glow/shadow
-  const isGlow = style === 'neon-green' || style === 'fire' || style === 'ice';
-  ctx.shadowColor = s.shadow;
-  ctx.shadowBlur  = isGlow ? 22 : 5;
-  ctx.shadowOffsetX = isGlow ? 0 : 2;
-  ctx.shadowOffsetY = isGlow ? 0 : 2;
+  // Glow or shadow
+  ctx.shadowColor    = s.shadow;
+  ctx.shadowBlur     = s.glow ? 22 : 5;
+  ctx.shadowOffsetX  = s.glow ? 0  : 2;
+  ctx.shadowOffsetY  = s.glow ? 0  : 2;
 
   ctx.fillStyle = s.color;
   ctx.fillText(text, W / 2, cy);
