@@ -162,7 +162,7 @@ titlePositionSel.addEventListener('change', () => {
 });
 
 // ─── STICKER PARAMS ──────────────────────────────────────────
-stickerBrowse.addEventListener('click', () => stickerInput.click());
+stickerBrowse.addEventListener('click', (e) => { e.stopPropagation(); stickerInput.click(); });
 stickerDrop.addEventListener('click', () => stickerInput.click());
 
 stickerInput.addEventListener('change', () => {
@@ -201,7 +201,7 @@ stickerOpacityIn.addEventListener('input', () => {
 });
 
 // ─── OUTRO PARAMS ────────────────────────────────────────────
-outroBrowse.addEventListener('click', () => outroInput.click());
+outroBrowse.addEventListener('click', (e) => { e.stopPropagation(); outroInput.click(); });
 outroDrop.addEventListener('click', () => outroInput.click());
 
 outroInput.addEventListener('change', () => {
@@ -299,21 +299,20 @@ async function getFFmpeg() {
 
   setProgress(5, 'Chargement de FFmpeg…');
 
-  // Try multi-thread first (needs SharedArrayBuffer / COOP+COEP headers)
-  // Fall back to single-thread automatically
-  const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd';
-  try {
+  // Utilise le core multi-thread si SharedArrayBuffer est disponible, sinon single-thread
+  const hasSAB = typeof SharedArrayBuffer !== 'undefined';
+  if (hasSAB) {
+    const mtURL = 'https://unpkg.com/@ffmpeg/core-mt@0.12.6/dist/umd';
     await ff.load({
-      coreURL:   await toBlobURL(`${baseURL}/ffmpeg-core.js`,   'text/javascript'),
-      wasmURL:   await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
+      coreURL:   await toBlobURL(`${mtURL}/ffmpeg-core.js`,        'text/javascript'),
+      wasmURL:   await toBlobURL(`${mtURL}/ffmpeg-core.wasm`,      'application/wasm'),
+      workerURL: await toBlobURL(`${mtURL}/ffmpeg-core.worker.js`, 'text/javascript'),
     });
-  } catch(e) {
-    // single-thread fallback
-    const stURL = 'https://unpkg.com/@ffmpeg/core-mt@0.12.6/dist/umd';
+  } else {
+    const stURL = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd';
     await ff.load({
-      coreURL:   await toBlobURL(`${stURL}/ffmpeg-core.js`,   'text/javascript'),
-      wasmURL:   await toBlobURL(`${stURL}/ffmpeg-core.wasm`, 'application/wasm'),
-      workerURL: await toBlobURL(`${stURL}/ffmpeg-core.worker.js`, 'text/javascript'),
+      coreURL: await toBlobURL(`${stURL}/ffmpeg-core.js`,   'text/javascript'),
+      wasmURL: await toBlobURL(`${stURL}/ffmpeg-core.wasm`, 'application/wasm'),
     });
   }
   ffmpegInstance = ff;
@@ -361,17 +360,8 @@ async function processVideo() {
       else                         { overlayX = `main_w-overlay_w-${pad}`; overlayY = `main_h-overlay_h-${pad}`; }
 
       const sizePct = state.stickerSize / 100;
-      const opacity = state.stickerOpacity / 100;
 
-      // Scale sticker relative to video width, apply opacity via colorchannelmixer
-      const filterComplex = [
-        `[1:v]scale=iw*0:ih*0,scale=w='${sizePct}*main_w':h=-1[stk]`,
-        `[0:v][stk]overlay=${overlayX}:${overlayY}:format=auto,format=yuv420p[out]`
-      ].join(';')
-      .replace('iw*0:ih*0,scale=', '');
-
-      // Simpler approach: scale sticker, then overlay
-      const fc = `[1:v]scale=iw*${sizePct}:ih*${sizePct}[stk];[0:v][stk]overlay=${overlayX}:${overlayY}:format=auto,format=yuv420p[out]`;
+      const fc = `[1:v]scale=iw*${sizePct}:ih*${sizePct}[stk];[0:v][stk]overlay=${overlayX}:${overlayY}:format=auto[v];[v]format=yuv420p[out]`;
 
       await ff.exec([
         '-i', currentInput,
