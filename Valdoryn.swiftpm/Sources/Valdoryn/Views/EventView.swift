@@ -90,40 +90,38 @@ struct ChoiceRow: View {
     }
 
     var body: some View {
-        Button(action: onTap) {
-            HStack(alignment: .top, spacing: 14) {
-                // Lettre
-                Text(label)
-                    .font(.system(size: 14, weight: .black, design: .rounded))
-                    .foregroundStyle(.black)
-                    .frame(width: 26, height: 26)
-                    .background(Color.yellow)
-                    .clipShape(Circle())
+        HStack(alignment: .top, spacing: 14) {
+            Text(label)
+                .font(.system(size: 14, weight: .black, design: .rounded))
+                .foregroundStyle(.black)
+                .frame(width: 26, height: 26)
+                .background(Color.yellow)
+                .clipShape(Circle())
 
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(choice.text)
-                        .font(.system(size: 14, weight: .medium))
-                        .foregroundStyle(.white)
-                        .multilineTextAlignment(.leading)
+            VStack(alignment: .leading, spacing: 4) {
+                Text(choice.text)
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundStyle(.white)
+                    .multilineTextAlignment(.leading)
 
-                    if !impactPreview.isEmpty {
-                        Text(impactPreview)
-                            .font(.system(size: 11))
-                            .foregroundStyle(.white.opacity(0.5))
-                    }
+                if !impactPreview.isEmpty {
+                    Text(impactPreview)
+                        .font(.system(size: 11))
+                        .foregroundStyle(.white.opacity(0.5))
                 }
-
-                Spacer()
-
-                Image(systemName: "chevron.right")
-                    .font(.caption)
-                    .foregroundStyle(.white.opacity(0.3))
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 14)
-            .background(pressed ? Color.white.opacity(0.08) : Color.clear)
+
+            Spacer()
+
+            Image(systemName: "chevron.right")
+                .font(.caption)
+                .foregroundStyle(.white.opacity(0.3))
         }
-        .buttonStyle(.plain)
-        ._onButtonGesture(pressing: { pressed = $0 }, perform: {})
+        .padding(.horizontal, 16)
+        .padding(.vertical, 14)
+        .background(pressed ? Color.white.opacity(0.08) : Color.clear)
+        .contentShape(Rectangle())
+        .onTapGesture { onTap() }
+        .onLongPressGesture(minimumDuration: 0, pressing: { pressing in pressed = pressing }, perform: {})
     }
 }
