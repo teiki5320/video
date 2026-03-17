@@ -55,7 +55,6 @@ enum VictoryReason {
     }
 }
 
-@MainActor
 class GameState: ObservableObject {
     @Published var phase: GamePhase = .menu
     @Published var resources: Resources = .initial
@@ -125,19 +124,15 @@ class GameState: ObservableObject {
             // Saison compatible
             guard event.seasons.isEmpty || event.seasons.contains(season) else { return false }
             // Trigger
-            switch event.trigger {
-            case .random:
+            if event.trigger.isCrisis {
+                return event.trigger.isTriggered(by: resources)
+            } else {
                 return !usedEventIds.contains(event.id)
-            case .condition(let check):
-                return check(resources)
             }
         }
 
-        // Priorité aux événements conditionnels
-        let conditional = available.filter {
-            if case .condition = $0.trigger { return true }
-            return false
-        }
+        // Priorité aux crises
+        let conditional = available.filter { $0.trigger.isCrisis }
 
         if let event = conditional.first {
             phase = .event(event)

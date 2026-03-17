@@ -173,7 +173,7 @@ struct AllEvents {
             title: "La Famine Menace",
             narrative: "Les greniers sont presque vides. Les enfants ont faim. Des familles ont commencé à partir. Si rien n'est fait, la famine emportera Valdoryn.",
             seasons: [],
-            trigger: .condition { $0.food < 15 && $0.population > 20 },
+            trigger: .lowFood,
             choices: [
                 EventChoice(text: "Acheter des vivres à prix d'or",
                             consequence: "Les convois de nourriture arrivent. Le village respire. Vos coffres s'allègent considérablement.",
@@ -192,7 +192,7 @@ struct AllEvents {
             title: "Les Caisses sont Vides",
             narrative: "Vos intendants vous annoncent une nouvelle terrible : il ne reste plus un denier dans les coffres. Les gardes réclament leur solde. Les artisans attendent leur dû.",
             seasons: [],
-            trigger: .condition { $0.gold < 10 },
+            trigger: .lowGold,
             choices: [
                 EventChoice(text: "Vendre des terres du domaine",
                             consequence: "Un sacrifice douloureux. Votre domaine rétrécit mais les caisses se renflouent.",
@@ -211,7 +211,7 @@ struct AllEvents {
             title: "La Peste",
             narrative: "Une épidémie se propage dans le village. Les malades se comptent par dizaines. Votre médecin vous implore d'agir avant que la maladie ne devienne incontrôlable.",
             seasons: [],
-            trigger: .condition { $0.population > 150 && $0.food < 30 },
+            trigger: .plague,
             choices: [
                 EventChoice(text: "Quarantaine stricte — isoler les malades",
                             consequence: "La quarantaine est douloureuse mais efficace. L'épidémie est contenue.",
@@ -230,7 +230,7 @@ struct AllEvents {
             title: "Le Début d'une Révolte",
             narrative: "Des agitateurs parcourent le village, promettant un seigneur plus juste. Une foule commence à se former devant le château. Vos gardes sont nerveux.",
             seasons: [],
-            trigger: .condition { $0.prestige < 15 && $0.population > 50 },
+            trigger: .lowPrestige,
             choices: [
                 EventChoice(text: "Sortir et parler au peuple",
                             consequence: "Vos mots touchent la foule. La tension retombe. Vous promettez de mieux gouverner.",
