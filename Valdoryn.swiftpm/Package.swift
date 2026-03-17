@@ -4,13 +4,10 @@ import PackageDescription
 
 let package = Package(
     name: "Valdoryn",
-    platforms: [
-        .iOS("16.0")
-    ],
     targets: [
         .executableTarget(
             name: "Valdoryn",
-            path: "Sources/Valdoryn"
+            path: "Sources"
         )
     ]
 )
