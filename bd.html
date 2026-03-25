@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AfriComics – Créateur de BD Africaine</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Comic+Neue:ital,wght@0,400;0,700;1,400&family=Oswald:wght@700&family=Exo+2:wght@400;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="bd_style.css" />
+</head>
+<body>
+
+<div id="app">
+
+  <!-- ============ SECTION ACCUEIL ============ -->
+  <section id="intro-section" class="section active">
+
+    <div class="hero">
+      <div class="african-pattern"></div>
+      <div class="hero-badge">✦ AFRIQUE SUBSAHARIENNE ✦</div>
+      <h1 class="hero-title">AFRI<span class="hero-accent">COMICS</span></h1>
+      <p class="hero-sub">Créez des bandes dessinées haletantes sur l'Afrique — en quelques secondes</p>
+    </div>
+
+    <div class="form-card">
+      <div class="form-group api-group">
+        <label for="api-key">🔑 Clé API Anthropic <span class="required">*</span></label>
+        <input type="password" id="api-key" placeholder="sk-ant-api03-…" autocomplete="off" spellcheck="false" />
+        <span class="hint">Votre clé reste dans votre navigateur et n'est jamais envoyée ailleurs</span>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="story-title">📝 Titre de la BD</label>
+          <input type="text" id="story-title" placeholder="Ex: Les Ombres de Kinshasa" />
+        </div>
+        <div class="form-group">
+          <label for="story-genre">🎭 Genre</label>
+          <select id="story-genre">
+            <option value="thriller politique">Thriller Politique</option>
+            <option value="aventure mystique" selected>Aventure Mystique</option>
+            <option value="science-fiction africaine">Sci-Fi Africaine</option>
+            <option value="drame historique">Drame Historique</option>
+            <option value="horreur urbaine">Horreur Urbaine</option>
+            <option value="romance et trahison">Romance & Trahison</option>
+            <option value="guerre et résistance">Guerre & Résistance</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="story-setting">🌍 Cadre géographique</label>
+          <select id="story-setting">
+            <option value="Lagos, Nigeria">Lagos, Nigeria</option>
+            <option value="Kinshasa, République Démocratique du Congo" selected>Kinshasa, RDC</option>
+            <option value="Nairobi, Kenya">Nairobi, Kenya</option>
+            <option value="Dakar, Sénégal">Dakar, Sénégal</option>
+            <option value="Addis-Abeba, Éthiopie">Addis-Abeba, Éthiopie</option>
+            <option value="Bamako, Mali">Bamako, Mali</option>
+            <option value="Accra, Ghana">Accra, Ghana</option>
+            <option value="savane du Sahel">Savane Sahélienne</option>
+            <option value="forêt tropicale du bassin du Congo">Forêt du Congo</option>
+            <option value="côtes de l'Afrique de l'Ouest">Côtes Ouest-Africaines</option>
+            <option value="désert de Namibie">Désert de Namibie</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="story-era">⏰ Époque</label>
+          <select id="story-era">
+            <option value="contemporaine (2024)">Contemporaine (2024)</option>
+            <option value="années 1990 (génocide, guerres civiles)">Années 1990</option>
+            <option value="années 1970 (post-indépendances)">Années 1970</option>
+            <option value="XIXe siècle (résistance coloniale)">XIXe siècle</option>
+            <option value="empire du Mali XIIIe siècle (Soundiata Keïta)">Empire du Mali</option>
+            <option value="royaume de Kush (Antiquité nubienne)">Antiquité Nubienne</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="story-hero">🦸 Protagoniste principal</label>
+        <input type="text" id="story-hero" placeholder="Ex: Amara, jeune hackeuse de Kinshasa, 24 ans, fille de résistant…" />
+      </div>
+
+      <div class="form-group">
+        <label for="story-theme">💡 Thème central (optionnel)</label>
+        <input type="text" id="story-theme" placeholder="Ex: corruption minière, esprits ancestraux, identité, survie…" />
+      </div>
+
+      <div class="form-group">
+        <label>🤖 Modèle Claude</label>
+        <div class="model-picker">
+          <button class="model-btn active" data-model="claude-sonnet-4-6">
+            <span class="model-name">Sonnet</span>
+            <span class="model-desc">Rapide · Créatif</span>
+          </button>
+          <button class="model-btn" data-model="claude-opus-4-6">
+            <span class="model-name">Opus</span>
+            <span class="model-desc">Premium · Épique</span>
+          </button>
+          <button class="model-btn" data-model="claude-haiku-4-5-20251001">
+            <span class="model-name">Haiku</span>
+            <span class="model-desc">Éclair · Simple</span>
+          </button>
+        </div>
+      </div>
+
+      <button class="btn-generate" id="generate-btn">
+        <span class="btn-icon">🎨</span>
+        <span>Créer ma BD</span>
+      </button>
+      <p class="form-error" id="form-error" hidden></p>
+    </div>
+
+  </section>
+
+  <!-- ============ SECTION GÉNÉRATION ============ -->
+  <section id="generating-section" class="section">
+    <div class="gen-container">
+
+      <div class="gen-mascot">
+        <div class="gen-spinner-wrap">
+          <div class="gen-spinner"></div>
+          <span class="gen-icon" id="gen-icon">✍️</span>
+        </div>
+      </div>
+
+      <h2 class="gen-title" id="gen-title">Création de votre BD…</h2>
+      <p class="gen-subtitle" id="gen-subtitle">Claude tisse votre histoire africaine…</p>
+
+      <div class="gen-progress-wrap">
+        <div class="gen-bar-bg">
+          <div class="gen-bar-fill" id="gen-fill"></div>
+        </div>
+        <div class="gen-steps">
+          <div class="gen-step" id="step-story">
+            <div class="step-dot"></div>
+            <span>Histoire</span>
+          </div>
+          <div class="gen-step" id="step-panels">
+            <div class="step-dot"></div>
+            <span>Structure</span>
+          </div>
+          <div class="gen-step" id="step-images">
+            <div class="step-dot"></div>
+            <span>Illustrations</span>
+          </div>
+          <div class="gen-step" id="step-done">
+            <div class="step-dot"></div>
+            <span>Prêt!</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="gen-log" id="gen-log"></div>
+
+    </div>
+  </section>
+
+  <!-- ============ SECTION BD VIEWER ============ -->
+  <section id="comic-section" class="section">
+
+    <div class="comic-header">
+      <button class="btn-back" id="back-btn">← Nouvelle BD</button>
+      <div class="comic-title-block">
+        <h1 class="comic-main-title" id="comic-title">Titre</h1>
+        <p class="comic-accroche" id="comic-accroche">…</p>
+      </div>
+      <div class="comic-nav-wrap">
+        <button class="btn-nav" id="prev-btn" disabled aria-label="Page précédente">◀</button>
+        <span class="page-indicator" id="page-indicator">1 / 10</span>
+        <button class="btn-nav" id="next-btn" aria-label="Page suivante">▶</button>
+      </div>
+    </div>
+
+    <div class="comic-viewer" id="comic-viewer">
+      <!-- Pages injectées par JS -->
+    </div>
+
+    <div class="comic-footer-bar">
+      <div class="page-dots-wrap" id="page-dots"></div>
+    </div>
+
+  </section>
+
+</div>
+
+<script src="bd_script.js"></script>
+</body>
+</html>
