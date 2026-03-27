@@ -536,6 +536,104 @@ select option { background: var(--surface2); }
 }
 .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
 
+/* Slide mini-col (preview + bg controls) */
+.slide-mini-col {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+.slide-bg-btn {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 0.72rem;
+  cursor: pointer;
+  width: 108px;
+  transition: all 0.15s;
+}
+.slide-bg-btn:hover { border-color: var(--accent); color: var(--accent); }
+.slide-bg-panel {
+  width: 108px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.slide-bg-panel input[type="color"] {
+  width: 100%;
+  height: 28px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: none;
+  cursor: pointer;
+  padding: 1px;
+}
+.slide-bg-panel .link-btn {
+  font-size: 0.72rem;
+  text-align: center;
+  padding: 3px 0;
+  cursor: pointer;
+  color: var(--accent);
+  background: none;
+  border: none;
+  width: 100%;
+}
+
+/* Slide outro media preview */
+#slide-outro-media-preview-wrap {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-start;
+}
+#slide-outro-img-preview {
+  max-width: 100%;
+  max-height: 180px;
+  border-radius: 8px;
+  display: block;
+  background: repeating-conic-gradient(#333 0% 25%,#222 0% 50%) 0 0/16px 16px;
+}
+#slide-outro-vid-preview {
+  width: 100%;
+  border-radius: 8px;
+  display: block;
+}
+
+/* Slide video generation */
+#slide-gen-section .progress-wrap {
+  margin-top: 16px;
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  border: 1px solid var(--border);
+}
+#slide-result-section {
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 20px;
+  border: 1px solid var(--border);
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+#slide-result-section h3 { font-size: 1rem; color: var(--text-muted); }
+#slide-result-video {
+  width: 100%;
+  max-height: 500px;
+  border-radius: 8px;
+  background: #000;
+  display: block;
+}
+
 /* ===== SCROLLBAR ===== */
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: var(--bg); }

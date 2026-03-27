@@ -108,6 +108,34 @@
       <button class="btn-primary" id="copy-script-btn">📋 Copier le script</button>
     </div>
 
+    <!-- Génération vidéo des slides -->
+    <div id="slide-gen-section" hidden>
+      <div class="param-card" style="margin-top:24px">
+        <h2>🎬 Générer la vidéo</h2>
+        <label for="slide-duration">Durée par slide</label>
+        <div class="range-row">
+          <input type="range" id="slide-duration" min="2" max="12" value="4" step="0.5" />
+          <span id="slide-duration-display">4 s</span>
+        </div>
+        <div class="action-row" style="margin-top:16px">
+          <button class="btn-primary" id="gen-slide-video-btn">🎬 Monter la vidéo</button>
+        </div>
+      </div>
+
+      <div class="progress-wrap" id="slide-progress-wrap" hidden>
+        <div class="progress-bar-bg">
+          <div class="progress-bar-fill" id="slide-progress-fill"></div>
+        </div>
+        <p class="progress-text" id="slide-progress-text">Initialisation…</p>
+      </div>
+
+      <section class="result-section" id="slide-result-section" hidden>
+        <h3>Vidéo des slides prête</h3>
+        <video id="slide-result-video" controls></video>
+        <a id="slide-download-btn" class="btn-primary download" download="slides.webm">⬇ Télécharger</a>
+      </section>
+    </div>
+
   </main>
 
   <!-- ========== ONGLET PARAMÈTRES ========== -->
@@ -260,7 +288,23 @@
       <section class="param-card">
         <h2>🎭 Slide Outro</h2>
 
-        <label for="slide-outro-title">Titre de l'outro</label>
+        <!-- Média : image ou vidéo -->
+        <label>Fond (image ou vidéo)</label>
+        <div class="upload-mini" id="slide-outro-drop">
+          <input type="file" id="slide-outro-media-input" accept="image/*,video/*" hidden />
+          <div class="upload-mini-inner">
+            <span>📁</span>
+            <p>Image ou vidéo de fond</p>
+            <button class="link-btn" id="slide-outro-media-browse">Choisir</button>
+          </div>
+        </div>
+        <div id="slide-outro-media-preview-wrap" hidden>
+          <img id="slide-outro-img-preview" src="" alt="" />
+          <video id="slide-outro-vid-preview" controls></video>
+          <button class="btn-remove" id="slide-outro-media-remove">✕ Supprimer</button>
+        </div>
+
+        <label for="slide-outro-title">Titre</label>
         <input type="text" id="slide-outro-title" value="🔥 ABONNEZ-VOUS !" />
 
         <label for="slide-outro-subtitle">Sous-titre</label>
@@ -271,7 +315,7 @@
 
         <div class="color-row">
           <div class="color-field">
-            <label for="slide-outro-bg">Fond</label>
+            <label for="slide-outro-bg">Fond (couleur fallback)</label>
             <input type="color" id="slide-outro-bg" value="#1a1a2e" />
           </div>
           <div class="color-field">

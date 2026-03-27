@@ -19,11 +19,14 @@ const state = {
   stickerOpacity: 90,
   // Slide
   slides: [],
+  slideDuration: 4,
   slideOutroTitle: '🔥 ABONNEZ-VOUS !',
   slideOutroSubtitle: "Pour plus d'actus sur l'Afrique",
   slideOutroCta: '',
   slideOutroBg: '#1a1a2e',
   slideOutroAccent: '#6c63ff',
+  slideOutroFile: null,
+  slideOutroFileType: null,
 };
 
 // ─── Refs DOM ───────────────────────────────────────────────
@@ -76,10 +79,17 @@ const outroPreviewVid  = $('outro-preview');
 const outroRemove      = $('outro-remove');
 
 const slideOutroTitleIn  = $('slide-outro-title');
-const slideOutroSubIn    = $('slide-outro-subtitle');
-const slideOutroCtaIn    = $('slide-outro-cta');
-const slideOutroBgIn     = $('slide-outro-bg');
-const slideOutroAccentIn = $('slide-outro-accent');
+const slideOutroSubIn          = $('slide-outro-subtitle');
+const slideOutroCtaIn          = $('slide-outro-cta');
+const slideOutroBgIn           = $('slide-outro-bg');
+const slideOutroAccentIn       = $('slide-outro-accent');
+const slideOutroMediaInput     = $('slide-outro-media-input');
+const slideOutroMediaBrowse    = $('slide-outro-media-browse');
+const slideOutroDrop           = $('slide-outro-drop');
+const slideOutroMediaPrevWrap  = $('slide-outro-media-preview-wrap');
+const slideOutroImgPreview     = $('slide-outro-img-preview');
+const slideOutroVidPreview     = $('slide-outro-vid-preview');
+const slideOutroMediaRemove    = $('slide-outro-media-remove');
 
 const saveParamsBtn = $('save-params-btn');
 const saveFeedback  = $('save-feedback');
@@ -601,12 +611,22 @@ function fmt(sec) {
 
 // ─── SLIDE TAB ────────────────────────────────────────────────
 
-const fetchNewsBtn    = $('fetch-news-btn');
-const fetchStatus     = $('fetch-status');
-const slidesContainer = $('slides-container');
-const slidesFooter    = $('slides-footer');
-const regenerateBtn   = $('regenerate-btn');
-const copyScriptBtn   = $('copy-script-btn');
+const fetchNewsBtn      = $('fetch-news-btn');
+const fetchStatus       = $('fetch-status');
+const slidesContainer   = $('slides-container');
+const slidesFooter      = $('slides-footer');
+const regenerateBtn     = $('regenerate-btn');
+const copyScriptBtn     = $('copy-script-btn');
+const slideGenSection   = $('slide-gen-section');
+const slideDurationIn   = $('slide-duration');
+const slideDurationDisp = $('slide-duration-display');
+const genSlideVideoBtn  = $('gen-slide-video-btn');
+const slideProgressWrap = $('slide-progress-wrap');
+const slideProgressFill = $('slide-progress-fill');
+const slideProgressText = $('slide-progress-text');
+const slideResultSection= $('slide-result-section');
+const slideResultVideo  = $('slide-result-video');
+const slideDownloadBtn  = $('slide-download-btn');
 
 const SLIDE_PALETTES = [
   { bg: 'linear-gradient(145deg,#1a0035,#3d0070)', accent: '#b97aff' },  // hook
@@ -631,6 +651,7 @@ fetchNewsBtn.addEventListener('click', async () => {
     renderAllSlides();
     slidesContainer.hidden = false;
     slidesFooter.hidden = false;
+    slideGenSection.hidden = false;
     fetchStatus.textContent = `✅ ${news.length} actualités trouvées — modifie les slides ci-dessous.`;
     fetchStatus.style.color = '#2dce6a';
   } catch(e) {
@@ -663,21 +684,18 @@ function buildSlides(news) {
 
   // Slide 1 – Hook
   state.slides.push({
-    type: 'hook',
-    title: '🌍 L\'AFRIQUE EN CE MOMENT',
+    type: 'hook', paletteIdx: 0,
+    title: "🌍 L'AFRIQUE EN CE MOMENT",
     body: `${news[0].title}\n\nDécouvre les 5 actus qui font l'Afrique aujourd'hui. 👇`,
-    paletteIdx: 0,
+    bgType: 'gradient', bgColor: '#1a0035', bgImageEl: null,
   });
 
   // Slides 2-6 – Actualités
   news.forEach((item, i) => {
     state.slides.push({
-      type: 'news',
-      newsNum: i + 1,
-      title: item.title,
-      body: item.body,
-      date: item.date,
-      paletteIdx: i + 1,
+      type: 'news', newsNum: i + 1, paletteIdx: i + 1,
+      title: item.title, body: item.body, date: item.date,
+      bgType: 'gradient', bgColor: '#001a3d', bgImageEl: null,
     });
   });
 
@@ -687,6 +705,7 @@ function buildSlides(news) {
     title: state.slideOutroTitle,
     body: state.slideOutroSubtitle,
     cta: state.slideOutroCta,
+    bgType: 'gradient', bgColor: state.slideOutroBg, bgImageEl: null,
   });
 }
 
@@ -698,22 +717,31 @@ function renderAllSlides() {
 function createSlideCard(slide, idx) {
   const isOutro = slide.type === 'outro';
   const palette = isOutro
-    ? { bg: state.slideOutroBg, accent: state.slideOutroAccent }
+    ? { bg: slide.bgType === 'color' ? slide.bgColor : state.slideOutroBg, accent: state.slideOutroAccent }
     : SLIDE_PALETTES[slide.paletteIdx] || SLIDE_PALETTES[0];
+  const typeLabel = slide.type === 'hook' ? 'HOOK' : isOutro ? 'OUTRO' : `ACTU ${slide.newsNum}`;
 
-  const typeLabel = slide.type === 'hook' ? 'HOOK'
-    : isOutro ? 'OUTRO'
-    : `ACTU ${slide.newsNum}`;
+  const previewBg = slide.bgType === 'color' ? slide.bgColor
+    : slide.bgType === 'image' && slide.bgImageEl ? `url("${slide.bgImageEl.src}") center/cover`
+    : palette.bg;
 
   const card = document.createElement('div');
   card.className = 'slide-card';
   card.dataset.idx = idx;
 
   card.innerHTML = `
-    <div class="slide-mini-preview" style="background:${palette.bg}">
-      <span class="slide-type-badge" style="color:${palette.accent}">${typeLabel}</span>
-      <div class="slide-mini-title">${escHtml(slide.title)}</div>
-      ${isOutro && slide.cta ? `<div style="position:absolute;bottom:8px;font-size:0.55rem;font-weight:800;color:${palette.accent};text-align:center;width:100%;padding:0 4px">${escHtml(slide.cta)}</div>` : ''}
+    <div class="slide-mini-col">
+      <div class="slide-mini-preview" style="background:${previewBg}">
+        <span class="slide-type-badge" style="color:${palette.accent}">${typeLabel}</span>
+        <div class="slide-mini-title">${escHtml(slide.title)}</div>
+        ${isOutro && slide.cta ? `<div style="position:absolute;bottom:8px;font-size:0.55rem;font-weight:800;color:${palette.accent};text-align:center;width:100%;padding:0 4px">${escHtml(slide.cta)}</div>` : ''}
+      </div>
+      <button class="slide-bg-btn" data-idx="${idx}">🎨 Fond</button>
+      <div class="slide-bg-panel" hidden>
+        <input type="color" class="slide-bg-color" value="${slide.bgColor || '#111122'}" title="Couleur unie">
+        <label class="link-btn" style="cursor:pointer">🖼 Image<input type="file" accept="image/*" class="slide-bg-img-input" hidden></label>
+        <button class="link-btn slide-bg-reset">↺ Défaut</button>
+      </div>
     </div>
     <div class="slide-edit-area">
       <div class="slide-edit-meta">
@@ -730,17 +758,60 @@ function createSlideCard(slide, idx) {
     </div>
   `;
 
+  // ── contenteditable sync ──
   card.querySelectorAll('[contenteditable]').forEach(el => {
     el.addEventListener('input', () => {
       const field = el.dataset.field;
-      const i = parseInt(el.dataset.idx);
-      state.slides[i][field] = el.innerText;
+      state.slides[parseInt(el.dataset.idx)][field] = el.innerText;
       if (field === 'title') card.querySelector('.slide-mini-title').textContent = el.innerText;
       if (field === 'cta' && isOutro) {
         const ctaEl = card.querySelector('.slide-mini-preview div[style*="bottom"]');
         if (ctaEl) ctaEl.textContent = el.innerText;
       }
     });
+  });
+
+  // ── background panel toggle ──
+  const bgBtn   = card.querySelector('.slide-bg-btn');
+  const bgPanel = card.querySelector('.slide-bg-panel');
+  const preview = card.querySelector('.slide-mini-preview');
+  bgBtn.addEventListener('click', () => { bgPanel.hidden = !bgPanel.hidden; });
+
+  // Color picker
+  card.querySelector('.slide-bg-color').addEventListener('input', e => {
+    slide.bgType  = 'color';
+    slide.bgColor = e.target.value;
+    slide.bgImageEl = null;
+    preview.style.background = e.target.value;
+  });
+
+  // Image upload
+  const imgInput = card.querySelector('.slide-bg-img-input');
+  imgInput.addEventListener('change', () => {
+    const f = imgInput.files[0];
+    if (!f) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      const img = new Image();
+      img.onload = () => {
+        slide.bgType    = 'image';
+        slide.bgImageEl = img;
+        preview.style.background = `url("${ev.target.result}") center/cover`;
+      };
+      img.src = ev.target.result;
+    };
+    reader.readAsDataURL(f);
+  });
+
+  // Reset to gradient
+  card.querySelector('.slide-bg-reset').addEventListener('click', () => {
+    slide.bgType    = 'gradient';
+    slide.bgImageEl = null;
+    const pal = isOutro
+      ? { bg: state.slideOutroBg }
+      : SLIDE_PALETTES[slide.paletteIdx] || SLIDE_PALETTES[0];
+    preview.style.background = pal.bg;
+    bgPanel.hidden = true;
   });
 
   return card;
@@ -795,3 +866,310 @@ regenerateBtn.addEventListener('click', () => fetchNewsBtn.click());
     if (state.slides.length) renderAllSlides();
   });
 });
+
+// ─── SLIDE OUTRO FILE UPLOAD ──────────────────────────────────
+slideOutroMediaBrowse.addEventListener('click', () => slideOutroMediaInput.click());
+slideOutroDrop.addEventListener('click', () => slideOutroMediaInput.click());
+slideOutroMediaInput.addEventListener('change', () => {
+  if (slideOutroMediaInput.files[0]) setSlideOutroMedia(slideOutroMediaInput.files[0]);
+});
+slideOutroMediaRemove.addEventListener('click', () => {
+  state.slideOutroFile     = null;
+  state.slideOutroFileType = null;
+  slideOutroMediaInput.value = '';
+  slideOutroImgPreview.src = '';
+  slideOutroVidPreview.src = '';
+  slideOutroImgPreview.hidden = true;
+  slideOutroVidPreview.hidden = true;
+  slideOutroMediaPrevWrap.hidden = true;
+  slideOutroDrop.hidden = false;
+});
+
+function setSlideOutroMedia(file) {
+  const isVideo = file.type.startsWith('video/');
+  state.slideOutroFile     = file;
+  state.slideOutroFileType = isVideo ? 'video' : 'image';
+  const url = URL.createObjectURL(file);
+  slideOutroImgPreview.hidden = isVideo;
+  slideOutroVidPreview.hidden = !isVideo;
+  if (isVideo) { slideOutroVidPreview.src = url; }
+  else          { slideOutroImgPreview.src = url; }
+  slideOutroMediaPrevWrap.hidden = false;
+  slideOutroDrop.hidden = true;
+}
+
+// ─── SLIDE DURATION CONTROL ───────────────────────────────────
+slideDurationIn.addEventListener('input', () => {
+  state.slideDuration = parseFloat(slideDurationIn.value);
+  slideDurationDisp.textContent = state.slideDuration + ' s';
+});
+
+// ─── GENERATE SLIDES VIDEO ────────────────────────────────────
+genSlideVideoBtn.addEventListener('click', generateSlidesVideo);
+
+// Canvas gradient colors per palette index (matching SLIDE_PALETTES)
+const SLIDE_CANVAS_BG = [
+  ['#1a0035', '#3d0070'],
+  ['#001a3d', '#002f70'],
+  ['#00200a', '#003814'],
+  ['#1f0d00', '#3d1a00'],
+  ['#001f1a', '#003830'],
+  ['#1f0007', '#3d000e'],
+];
+
+async function generateSlidesVideo() {
+  if (!state.slides.length) return;
+
+  genSlideVideoBtn.disabled = true;
+  slideProgressWrap.hidden  = false;
+  slideResultSection.hidden = true;
+  slideProgressFill.style.background = 'linear-gradient(90deg,var(--accent),var(--accent2))';
+
+  const W = 720, H = 1280;
+
+  try {
+    setSlideProgress(3, 'Chargement des polices…');
+    await document.fonts.ready;
+
+    // Sticker
+    let stickerImg = null;
+    if (state.stickerFile) {
+      stickerImg = await loadImg(URL.createObjectURL(state.stickerFile));
+    }
+
+    // Slide outro media
+    let outroMediaEl = null;
+    if (state.slideOutroFile) {
+      if (state.slideOutroFileType === 'video') {
+        outroMediaEl = makeVideoEl();
+        outroMediaEl.src = URL.createObjectURL(state.slideOutroFile);
+        await waitMeta(outroMediaEl);
+      } else {
+        outroMediaEl = await loadImg(URL.createObjectURL(state.slideOutroFile));
+      }
+    }
+
+    const canvas = document.createElement('canvas');
+    canvas.width = W; canvas.height = H;
+    const ctx = canvas.getContext('2d');
+
+    const mimeType = pickMime();
+    const stream   = canvas.captureStream(30);
+    const recOpts  = { videoBitsPerSecond: 5_000_000 };
+    if (mimeType) recOpts.mimeType = mimeType;
+    const recorder = new MediaRecorder(stream, recOpts);
+    const chunks   = [];
+    recorder.ondataavailable = e => { if (e.data?.size > 0) chunks.push(e.data); };
+    recorder.start(200);
+
+    const total = state.slides.length;
+    for (let i = 0; i < total; i++) {
+      const slide   = state.slides[i];
+      const isOutro = slide.type === 'outro';
+      setSlideProgress(Math.round(5 + (i / total) * 88), `Slide ${i + 1} / ${total}…`);
+
+      if (isOutro && outroMediaEl) {
+        if (state.slideOutroFileType === 'video') {
+          await renderVideoSlide(ctx, outroMediaEl, W, H, stickerImg, slide);
+        } else {
+          // image as background for outro slide
+          const imgSlide = { ...slide, bgType: 'image', bgImageEl: outroMediaEl };
+          await renderStaticSlide(ctx, imgSlide, W, H, stickerImg, state.slideDuration);
+        }
+      } else {
+        await renderStaticSlide(ctx, slide, W, H, stickerImg, state.slideDuration);
+      }
+    }
+
+    setSlideProgress(95, 'Finalisation…');
+    recorder.stop();
+    await waitStop(recorder);
+
+    const ext  = (mimeType || '').includes('mp4') ? 'mp4' : 'webm';
+    const blob = new Blob(chunks, { type: mimeType || 'video/webm' });
+    const url  = URL.createObjectURL(blob);
+    slideResultVideo.src        = url;
+    slideDownloadBtn.href       = url;
+    slideDownloadBtn.download   = `slides.${ext}`;
+    slideResultSection.hidden   = false;
+    slideResultSection.scrollIntoView({ behavior: 'smooth' });
+    setSlideProgress(100, '✓ Vidéo prête !');
+    slideProgressFill.style.background = '#2dce6a';
+
+  } catch(err) {
+    console.error(err);
+    setSlideProgress(0, '❌ Erreur : ' + err.message);
+  } finally {
+    genSlideVideoBtn.disabled = false;
+  }
+}
+
+function setSlideProgress(pct, msg) {
+  slideProgressFill.style.width = Math.min(pct, 100) + '%';
+  slideProgressText.textContent = msg;
+}
+
+function renderStaticSlide(ctx, slide, W, H, stickerImg, durationSec) {
+  return new Promise(resolve => {
+    const start  = performance.now();
+    const durMs  = durationSec * 1000;
+    let animId;
+    function frame() {
+      drawSlideCanvas(ctx, slide, W, H, stickerImg);
+      if (performance.now() - start >= durMs) {
+        cancelAnimationFrame(animId);
+        resolve();
+      } else {
+        animId = requestAnimationFrame(frame);
+      }
+    }
+    frame();
+  });
+}
+
+function renderVideoSlide(ctx, videoEl, W, H, stickerImg, slide) {
+  return new Promise(async resolve => {
+    let animId;
+    function frame() {
+      if (videoEl.readyState >= 2) {
+        ctx.drawImage(videoEl, 0, 0, W, H);
+        if (stickerImg) drawSticker(ctx, stickerImg, W, H);
+        drawSlideText(ctx, slide, W, H);
+      }
+      if (videoEl.ended || videoEl.paused) {
+        cancelAnimationFrame(animId);
+        resolve();
+      } else {
+        animId = requestAnimationFrame(frame);
+      }
+    }
+    try { await videoEl.play(); } catch(_) {}
+    frame();
+    videoEl.onended = () => { cancelAnimationFrame(animId); resolve(); };
+  });
+}
+
+function drawSlideCanvas(ctx, slide, W, H, stickerImg) {
+  const isOutro = slide.type === 'outro';
+  // Background
+  if (slide.bgType === 'image' && slide.bgImageEl) {
+    // cover fill
+    const ar = slide.bgImageEl.naturalWidth / slide.bgImageEl.naturalHeight;
+    let sw = W, sh = W / ar;
+    if (sh < H) { sh = H; sw = H * ar; }
+    ctx.drawImage(slide.bgImageEl, (W - sw) / 2, (H - sh) / 2, sw, sh);
+  } else if (slide.bgType === 'color') {
+    ctx.fillStyle = slide.bgColor;
+    ctx.fillRect(0, 0, W, H);
+  } else {
+    const stops = isOutro
+      ? [state.slideOutroBg, state.slideOutroBg]
+      : SLIDE_CANVAS_BG[slide.paletteIdx] || SLIDE_CANVAS_BG[0];
+    const grad = ctx.createLinearGradient(0, 0, W * 0.4, H);
+    grad.addColorStop(0, stops[0]);
+    grad.addColorStop(1, stops[1]);
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, W, H);
+  }
+
+  // Semi-transparent dark overlay for readability
+  ctx.fillStyle = 'rgba(0,0,0,0.28)';
+  ctx.fillRect(0, 0, W, H);
+
+  drawSlideText(ctx, slide, W, H);
+  if (stickerImg) drawSticker(ctx, stickerImg, W, H);
+}
+
+function drawSlideText(ctx, slide, W, H) {
+  const isOutro = slide.type === 'outro';
+  const palette = isOutro
+    ? { accent: state.slideOutroAccent }
+    : SLIDE_PALETTES[slide.paletteIdx] || SLIDE_PALETTES[0];
+  const ts = TITLE_STYLES[state.titleStyle] || TITLE_STYLES['bold-white'];
+  const fam = state.fontOverride || ts.family;
+  const typeLabel = slide.type === 'hook' ? 'HOOK' : isOutro ? 'OUTRO' : `ACTU ${slide.newsNum}`;
+
+  // ── Type badge ──
+  const badgeSize = Math.round(W * 0.038);
+  ctx.save();
+  ctx.font = `700 ${badgeSize}px ${fam}`;
+  ctx.fillStyle = palette.accent;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  ctx.shadowColor = 'rgba(0,0,0,0.8)'; ctx.shadowBlur = 6;
+  ctx.fillText(typeLabel, W / 2, H * 0.065);
+  ctx.restore();
+
+  // ── Title ──
+  const titleSize = Math.round(W * 0.082);
+  ctx.save();
+  ctx.font = `${ts.font} ${titleSize}px ${fam}`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  ctx.fillStyle = ts.color;
+  ctx.shadowColor = ts.shadow; ctx.shadowBlur = ts.glow ? 20 : 5;
+  ctx.shadowOffsetX = ts.glow ? 0 : 2; ctx.shadowOffsetY = ts.glow ? 0 : 2;
+  const titleLines = wrapText(ctx, slide.title, W * 0.86);
+  const titleLineH = titleSize * 1.22;
+  let titleY = H * 0.22;
+  titleLines.forEach((line, i) => ctx.fillText(line, W / 2, titleY + i * titleLineH));
+  const titleBottom = titleY + titleLines.length * titleLineH;
+  ctx.restore();
+
+  // ── Body ──
+  if (slide.body) {
+    const bodySize = Math.round(W * 0.044);
+    ctx.save();
+    ctx.font = `${bodySize}px ${fam}`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillStyle = 'rgba(255,255,255,0.88)';
+    ctx.shadowColor = 'rgba(0,0,0,0.85)'; ctx.shadowBlur = 4;
+    const bodyLines = wrapText(ctx, slide.body.replace(/\n/g, ' '), W * 0.83);
+    const bodyY = titleBottom + H * 0.04;
+    bodyLines.slice(0, 7).forEach((line, i) => ctx.fillText(line, W / 2, bodyY + i * bodySize * 1.5));
+    ctx.restore();
+  }
+
+  // ── CTA (outro) ──
+  if (isOutro && slide.cta) {
+    const ctaSize = Math.round(W * 0.058);
+    ctx.save();
+    ctx.font = `800 ${ctaSize}px ${fam}`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'bottom';
+    ctx.fillStyle = palette.accent;
+    ctx.shadowColor = 'rgba(0,0,0,0.9)'; ctx.shadowBlur = 10;
+    ctx.fillText(slide.cta, W / 2, H * 0.92);
+    ctx.restore();
+  }
+
+  // ── Date (news) ──
+  if (slide.date) {
+    const dateSize = Math.round(W * 0.033);
+    ctx.save();
+    ctx.font = `${dateSize}px ${fam}`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'bottom';
+    ctx.fillStyle = 'rgba(255,255,255,0.45)';
+    ctx.fillText(slide.date, W / 2, H * 0.96);
+    ctx.restore();
+  }
+}
+
+function wrapText(ctx, text, maxWidth) {
+  const words = (text || '').split(/\s+/);
+  const lines = [];
+  let cur = '';
+  for (const w of words) {
+    const test = cur ? cur + ' ' + w : w;
+    if (ctx.measureText(test).width > maxWidth && cur) {
+      lines.push(cur);
+      cur = w;
+    } else {
+      cur = test;
+    }
+  }
+  if (cur) lines.push(cur);
+  return lines;
+}
