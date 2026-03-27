@@ -17,6 +17,13 @@ const state = {
   stickerPosition: 'top-right',
   stickerSize: 15,
   stickerOpacity: 90,
+  // Slide
+  slides: [],
+  slideOutroTitle: '🔥 ABONNEZ-VOUS !',
+  slideOutroSubtitle: "Pour plus d'actus sur l'Afrique",
+  slideOutroCta: '',
+  slideOutroBg: '#1a1a2e',
+  slideOutroAccent: '#6c63ff',
 };
 
 // ─── Refs DOM ───────────────────────────────────────────────
@@ -67,6 +74,12 @@ const outroDrop        = $('outro-drop');
 const outroPreviewWrap = $('outro-preview-wrap');
 const outroPreviewVid  = $('outro-preview');
 const outroRemove      = $('outro-remove');
+
+const slideOutroTitleIn  = $('slide-outro-title');
+const slideOutroSubIn    = $('slide-outro-subtitle');
+const slideOutroCtaIn    = $('slide-outro-cta');
+const slideOutroBgIn     = $('slide-outro-bg');
+const slideOutroAccentIn = $('slide-outro-accent');
 
 const saveParamsBtn = $('save-params-btn');
 const saveFeedback  = $('save-feedback');
@@ -221,6 +234,9 @@ saveParamsBtn.addEventListener('click', () => {
     fontOverride: state.fontOverride,
     stickerPosition: state.stickerPosition, stickerSize: state.stickerSize,
     stickerOpacity: state.stickerOpacity,
+    slideOutroTitle: state.slideOutroTitle, slideOutroSubtitle: state.slideOutroSubtitle,
+    slideOutroCta: state.slideOutroCta, slideOutroBg: state.slideOutroBg,
+    slideOutroAccent: state.slideOutroAccent,
   };
   localStorage.setItem('vf_params', JSON.stringify(toSave));
   saveFeedback.textContent = '✓ Sauvegardé !';
@@ -243,6 +259,11 @@ function loadSavedParams() {
     if (p.stickerPosition){ state.stickerPosition = p.stickerPosition; stickerPositionSel.value = p.stickerPosition; }
     if (p.stickerSize)    { state.stickerSize = p.stickerSize; stickerSizeIn.value = p.stickerSize; stickerSizeDisplay.textContent = p.stickerSize + '%'; }
     if (p.stickerOpacity) { state.stickerOpacity = p.stickerOpacity; stickerOpacityIn.value = p.stickerOpacity; stickerOpacityDisp.textContent = p.stickerOpacity + '%'; }
+    if (p.slideOutroTitle    !== undefined) { state.slideOutroTitle    = p.slideOutroTitle;    slideOutroTitleIn.value  = p.slideOutroTitle; }
+    if (p.slideOutroSubtitle !== undefined) { state.slideOutroSubtitle = p.slideOutroSubtitle; slideOutroSubIn.value    = p.slideOutroSubtitle; }
+    if (p.slideOutroCta      !== undefined) { state.slideOutroCta      = p.slideOutroCta;      slideOutroCtaIn.value    = p.slideOutroCta; }
+    if (p.slideOutroBg       !== undefined) { state.slideOutroBg       = p.slideOutroBg;       slideOutroBgIn.value     = p.slideOutroBg; }
+    if (p.slideOutroAccent   !== undefined) { state.slideOutroAccent   = p.slideOutroAccent;   slideOutroAccentIn.value = p.slideOutroAccent; }
     updatePreview();
     updateSummary();
   } catch(e) {}
@@ -577,3 +598,200 @@ function fmt(sec) {
   const s = Math.floor(sec % 60).toString().padStart(2, '0');
   return `${m}:${s}`;
 }
+
+// ─── SLIDE TAB ────────────────────────────────────────────────
+
+const fetchNewsBtn    = $('fetch-news-btn');
+const fetchStatus     = $('fetch-status');
+const slidesContainer = $('slides-container');
+const slidesFooter    = $('slides-footer');
+const regenerateBtn   = $('regenerate-btn');
+const copyScriptBtn   = $('copy-script-btn');
+
+const SLIDE_PALETTES = [
+  { bg: 'linear-gradient(145deg,#1a0035,#3d0070)', accent: '#b97aff' },  // hook
+  { bg: 'linear-gradient(145deg,#001a3d,#002f70)', accent: '#4d9fff' },  // actu 1
+  { bg: 'linear-gradient(145deg,#00200a,#003814)', accent: '#4dff80' },  // actu 2
+  { bg: 'linear-gradient(145deg,#1f0d00,#3d1a00)', accent: '#ff8533' },  // actu 3
+  { bg: 'linear-gradient(145deg,#001f1a,#003830)', accent: '#33ffcc' },  // actu 4
+  { bg: 'linear-gradient(145deg,#1f0007,#3d000e)', accent: '#ff4466' },  // actu 5
+];
+
+fetchNewsBtn.addEventListener('click', async () => {
+  fetchNewsBtn.disabled = true;
+  fetchStatus.hidden = false;
+  fetchStatus.style.color = 'var(--text-muted)';
+  fetchStatus.textContent = '⏳ Recherche des actualités en cours…';
+  slidesContainer.hidden = true;
+  slidesFooter.hidden = true;
+
+  try {
+    const news = await fetchAfriqueNews();
+    buildSlides(news);
+    renderAllSlides();
+    slidesContainer.hidden = false;
+    slidesFooter.hidden = false;
+    fetchStatus.textContent = `✅ ${news.length} actualités trouvées — modifie les slides ci-dessous.`;
+    fetchStatus.style.color = '#2dce6a';
+  } catch(e) {
+    fetchStatus.textContent = '❌ Impossible de charger les actualités. Vérifie ta connexion et réessaie.';
+    fetchStatus.style.color = 'var(--accent2)';
+  } finally {
+    fetchNewsBtn.disabled = false;
+  }
+});
+
+async function fetchAfriqueNews() {
+  const rssUrl = 'https://www.rfi.fr/fr/afrique/rss';
+  const apiUrl = 'https://api.rss2json.com/v1/api.json?rss_url=' + encodeURIComponent(rssUrl);
+  const res = await fetch(apiUrl);
+  if (!res.ok) throw new Error('network');
+  const data = await res.json();
+  if (data.status !== 'ok' || !data.items?.length) throw new Error('rss');
+  return data.items.slice(0, 5).map(item => ({
+    title: (item.title || '').trim(),
+    body: (item.description || item.content || '')
+      .replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim().slice(0, 300),
+    date: item.pubDate
+      ? new Date(item.pubDate).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })
+      : '',
+  }));
+}
+
+function buildSlides(news) {
+  state.slides = [];
+
+  // Slide 1 – Hook
+  state.slides.push({
+    type: 'hook',
+    title: '🌍 L\'AFRIQUE EN CE MOMENT',
+    body: `${news[0].title}\n\nDécouvre les 5 actus qui font l'Afrique aujourd'hui. 👇`,
+    paletteIdx: 0,
+  });
+
+  // Slides 2-6 – Actualités
+  news.forEach((item, i) => {
+    state.slides.push({
+      type: 'news',
+      newsNum: i + 1,
+      title: item.title,
+      body: item.body,
+      date: item.date,
+      paletteIdx: i + 1,
+    });
+  });
+
+  // Slide 7 – Outro
+  state.slides.push({
+    type: 'outro',
+    title: state.slideOutroTitle,
+    body: state.slideOutroSubtitle,
+    cta: state.slideOutroCta,
+  });
+}
+
+function renderAllSlides() {
+  slidesContainer.innerHTML = '';
+  state.slides.forEach((slide, i) => slidesContainer.appendChild(createSlideCard(slide, i)));
+}
+
+function createSlideCard(slide, idx) {
+  const isOutro = slide.type === 'outro';
+  const palette = isOutro
+    ? { bg: state.slideOutroBg, accent: state.slideOutroAccent }
+    : SLIDE_PALETTES[slide.paletteIdx] || SLIDE_PALETTES[0];
+
+  const typeLabel = slide.type === 'hook' ? 'HOOK'
+    : isOutro ? 'OUTRO'
+    : `ACTU ${slide.newsNum}`;
+
+  const card = document.createElement('div');
+  card.className = 'slide-card';
+  card.dataset.idx = idx;
+
+  card.innerHTML = `
+    <div class="slide-mini-preview" style="background:${palette.bg}">
+      <span class="slide-type-badge" style="color:${palette.accent}">${typeLabel}</span>
+      <div class="slide-mini-title">${escHtml(slide.title)}</div>
+      ${isOutro && slide.cta ? `<div style="position:absolute;bottom:8px;font-size:0.55rem;font-weight:800;color:${palette.accent};text-align:center;width:100%;padding:0 4px">${escHtml(slide.cta)}</div>` : ''}
+    </div>
+    <div class="slide-edit-area">
+      <div class="slide-edit-meta">
+        <span class="slide-num">Slide ${idx + 1} / ${state.slides.length}</span>
+        <span class="slide-type-tag">${typeLabel}</span>
+        ${slide.date ? `<span class="slide-date">${escHtml(slide.date)}</span>` : ''}
+      </div>
+      <label>Titre</label>
+      <div class="slide-field slide-title-field" contenteditable="true" data-field="title" data-idx="${idx}">${escHtml(slide.title)}</div>
+      <label>Contenu</label>
+      <div class="slide-field slide-body-field" contenteditable="true" data-field="body" data-idx="${idx}">${escHtml(slide.body)}</div>
+      ${isOutro ? `<label>Call-to-action</label>
+      <div class="slide-field" contenteditable="true" data-field="cta" data-idx="${idx}">${escHtml(slide.cta || '')}</div>` : ''}
+    </div>
+  `;
+
+  card.querySelectorAll('[contenteditable]').forEach(el => {
+    el.addEventListener('input', () => {
+      const field = el.dataset.field;
+      const i = parseInt(el.dataset.idx);
+      state.slides[i][field] = el.innerText;
+      if (field === 'title') card.querySelector('.slide-mini-title').textContent = el.innerText;
+      if (field === 'cta' && isOutro) {
+        const ctaEl = card.querySelector('.slide-mini-preview div[style*="bottom"]');
+        if (ctaEl) ctaEl.textContent = el.innerText;
+      }
+    });
+  });
+
+  return card;
+}
+
+function escHtml(str) {
+  return (str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+copyScriptBtn.addEventListener('click', () => {
+  const script = state.slides.map((s, i) => {
+    let t = `=== SLIDE ${i + 1} — ${s.type.toUpperCase()} ===\n`;
+    t += `TITRE   : ${s.title}\n`;
+    t += `CONTENU : ${s.body}\n`;
+    if (s.cta) t += `CTA     : ${s.cta}\n`;
+    return t;
+  }).join('\n');
+
+  navigator.clipboard.writeText(script).then(() => {
+    const orig = copyScriptBtn.textContent;
+    copyScriptBtn.textContent = '✅ Copié !';
+    setTimeout(() => { copyScriptBtn.textContent = orig; }, 2000);
+  }).catch(() => {
+    alert('Impossible d\'accéder au presse-papier. Copie manuelle nécessaire.');
+  });
+});
+
+regenerateBtn.addEventListener('click', () => fetchNewsBtn.click());
+
+// Live sync outro settings → outro slide card
+[slideOutroTitleIn, slideOutroSubIn, slideOutroCtaIn].forEach(el => {
+  if (!el) return;
+  el.addEventListener('input', () => {
+    state.slideOutroTitle    = slideOutroTitleIn.value;
+    state.slideOutroSubtitle = slideOutroSubIn.value;
+    state.slideOutroCta      = slideOutroCtaIn.value;
+    const outroIdx = state.slides.findIndex(s => s.type === 'outro');
+    if (outroIdx >= 0) {
+      state.slides[outroIdx].title = state.slideOutroTitle;
+      state.slides[outroIdx].body  = state.slideOutroSubtitle;
+      state.slides[outroIdx].cta   = state.slideOutroCta;
+      renderAllSlides();
+    }
+  });
+});
+
+[slideOutroBgIn, slideOutroAccentIn].forEach(el => {
+  if (!el) return;
+  el.addEventListener('input', () => {
+    state.slideOutroBg     = slideOutroBgIn.value;
+    state.slideOutroAccent = slideOutroAccentIn.value;
+    if (state.slides.length) renderAllSlides();
+  });
+});

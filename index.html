@@ -15,6 +15,7 @@
     <span class="logo">🎬 VideoForge</span>
     <nav>
       <button class="tab-btn active" data-tab="montage">Montage</button>
+      <button class="tab-btn" data-tab="slide">Slide</button>
       <button class="tab-btn" data-tab="parametres">Paramètres</button>
     </nav>
   </header>
@@ -83,6 +84,29 @@
       <video id="result-video" controls></video>
       <a id="download-btn" class="btn-primary download" download="video_finale.mp4">⬇ Télécharger</a>
     </section>
+
+  </main>
+
+  <!-- ========== ONGLET SLIDE ========== -->
+  <main id="tab-slide" class="tab-content">
+
+    <div class="slide-tab-header">
+      <h2>🗞 Slides Afrique subsaharienne</h2>
+      <p class="text-muted">Génère automatiquement 7 slides prêts à poster depuis les dernières actualités RFI Afrique.</p>
+    </div>
+
+    <div class="action-row" style="margin-top:0">
+      <button class="btn-primary" id="fetch-news-btn">🔍 Rechercher les actualités</button>
+    </div>
+
+    <div id="fetch-status" class="fetch-status" hidden></div>
+
+    <div id="slides-container" class="slides-container" hidden></div>
+
+    <div id="slides-footer" class="action-row" hidden>
+      <button class="btn-secondary" id="regenerate-btn">🔄 Régénérer</button>
+      <button class="btn-primary" id="copy-script-btn">📋 Copier le script</button>
+    </div>
 
   </main>
 
@@ -229,6 +253,31 @@
         <div class="range-row">
           <input type="range" id="sticker-opacity" min="10" max="100" value="90" />
           <span id="sticker-opacity-display">90%</span>
+        </div>
+      </section>
+
+      <!-- SLIDE OUTRO -->
+      <section class="param-card">
+        <h2>🎭 Slide Outro</h2>
+
+        <label for="slide-outro-title">Titre de l'outro</label>
+        <input type="text" id="slide-outro-title" value="🔥 ABONNEZ-VOUS !" />
+
+        <label for="slide-outro-subtitle">Sous-titre</label>
+        <input type="text" id="slide-outro-subtitle" value="Pour plus d'actus sur l'Afrique" />
+
+        <label for="slide-outro-cta">Call-to-action (compte, hashtag…)</label>
+        <input type="text" id="slide-outro-cta" placeholder="@VotreCompte" />
+
+        <div class="color-row">
+          <div class="color-field">
+            <label for="slide-outro-bg">Fond</label>
+            <input type="color" id="slide-outro-bg" value="#1a1a2e" />
+          </div>
+          <div class="color-field">
+            <label for="slide-outro-accent">Accent</label>
+            <input type="color" id="slide-outro-accent" value="#6c63ff" />
+          </div>
         </div>
       </section>
 
