@@ -143,14 +143,10 @@
 
     <div class="params-grid">
 
-      <!-- TITRE -->
+      <!-- STYLE DES TEXTES -->
       <section class="param-card">
-        <h2>📝 Titre</h2>
+        <h2>🎨 Style des textes</h2>
 
-        <label for="title-text">Texte du titre</label>
-        <input type="text" id="title-text" placeholder="Mon super titre…" />
-
-        <label>Style du titre</label>
         <div class="style-picker" id="style-picker">
           <button class="style-btn active" data-style="bold-white"
             style="font-weight:700;color:#fff;background:#222;border:2px solid #6c63ff">
@@ -210,7 +206,7 @@
           </button>
         </div>
 
-        <label for="font-override">Police (override du style)</label>
+        <label for="font-override">Police</label>
         <select id="font-override">
           <option value="">— Défaut du style —</option>
           <option value="Arial, sans-serif">Arial</option>
@@ -225,24 +221,6 @@
           <option value="Impact, sans-serif">Impact – Meme</option>
           <option value="Georgia, serif">Georgia – Classique</option>
         </select>
-
-        <label for="title-duration">Durée d'affichage du titre (secondes)</label>
-        <div class="range-row">
-          <input type="range" id="title-duration" min="1" max="15" value="5" step="0.5" />
-          <span id="duration-display">5 s</span>
-        </div>
-
-        <label for="title-position">Position du titre</label>
-        <select id="title-position">
-          <option value="top">Haut</option>
-          <option value="center" selected>Centre</option>
-          <option value="bottom">Bas</option>
-        </select>
-
-        <!-- Live preview -->
-        <div class="title-preview-wrap">
-          <div class="title-preview" id="title-preview">Mon super titre…</div>
-        </div>
       </section>
 
       <!-- STICKER -->
