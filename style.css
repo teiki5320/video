@@ -408,8 +408,8 @@ select option { background: var(--surface2); }
 
 .slide-mini-preview {
   flex-shrink: 0;
-  width: 108px;
-  height: 192px;
+  width: 160px;
+  height: 285px;
   border-radius: 8px;
   display: flex;
   flex-direction: column;
@@ -423,10 +423,10 @@ select option { background: var(--surface2); }
 
 .slide-type-badge {
   position: absolute;
-  top: 7px;
+  top: 9px;
   left: 50%;
   transform: translateX(-50%);
-  font-size: 0.55rem;
+  font-size: 0.68rem;
   font-weight: 800;
   letter-spacing: 1.5px;
   text-transform: uppercase;
@@ -434,12 +434,12 @@ select option { background: var(--surface2); }
 }
 
 .slide-mini-title {
-  font-size: 0.58rem;
+  font-size: 0.78rem;
   font-weight: 700;
   color: #fff;
   text-align: center;
   line-height: 1.35;
-  margin-top: 18px;
+  margin-top: 22px;
   display: -webkit-box;
   -webkit-line-clamp: 7;
   -webkit-box-orient: vertical;
@@ -548,7 +548,7 @@ select option { background: var(--surface2); }
 .slide-bg-controls {
   display: flex;
   gap: 5px;
-  width: 108px;
+  width: 160px;
 }
 .slide-bg-ctrl {
   flex: 1;
