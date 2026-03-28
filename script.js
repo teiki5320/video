@@ -74,18 +74,9 @@ const outroPreviewWrap = $('outro-preview-wrap');
 const outroPreviewVid  = $('outro-preview');
 const outroRemove      = $('outro-remove');
 
-const slideOutroTitleIn  = $('slide-outro-title');
-const slideOutroSubIn          = $('slide-outro-subtitle');
-const slideOutroCtaIn          = $('slide-outro-cta');
-const slideOutroBgIn           = $('slide-outro-bg');
-const slideOutroAccentIn       = $('slide-outro-accent');
-const slideOutroMediaInput     = $('slide-outro-media-input');
-const slideOutroMediaBrowse    = $('slide-outro-media-browse');
-const slideOutroDrop           = $('slide-outro-drop');
-const slideOutroMediaPrevWrap  = $('slide-outro-media-preview-wrap');
-const slideOutroImgPreview     = $('slide-outro-img-preview');
-const slideOutroVidPreview     = $('slide-outro-vid-preview');
-const slideOutroMediaRemove    = $('slide-outro-media-remove');
+const slideOutroMediaInput  = $('slide-outro-media-input');
+const slideOutroMediaBrowse = $('slide-outro-media-browse');
+const slideOutroDrop        = $('slide-outro-drop');
 
 const saveParamsBtn = $('save-params-btn');
 const saveFeedback  = $('save-feedback');
@@ -211,9 +202,7 @@ saveParamsBtn.addEventListener('click', () => {
     fontOverride: state.fontOverride,
     stickerPosition: state.stickerPosition, stickerSize: state.stickerSize,
     stickerOpacity: state.stickerOpacity,
-    slideOutroTitle: state.slideOutroTitle, slideOutroSubtitle: state.slideOutroSubtitle,
-    slideOutroCta: state.slideOutroCta, slideOutroBg: state.slideOutroBg,
-    slideOutroAccent: state.slideOutroAccent,
+    slideOutroBg: state.slideOutroBg, slideOutroAccent: state.slideOutroAccent,
   };
   localStorage.setItem('vf_params', JSON.stringify(toSave));
   saveFeedback.textContent = '✓ Sauvegardé !';
@@ -230,11 +219,8 @@ function loadSavedParams() {
     if (p.stickerPosition){ state.stickerPosition = p.stickerPosition; stickerPositionSel.value = p.stickerPosition; }
     if (p.stickerSize)    { state.stickerSize = p.stickerSize; stickerSizeIn.value = p.stickerSize; stickerSizeDisplay.textContent = p.stickerSize + '%'; }
     if (p.stickerOpacity) { state.stickerOpacity = p.stickerOpacity; stickerOpacityIn.value = p.stickerOpacity; stickerOpacityDisp.textContent = p.stickerOpacity + '%'; }
-    if (p.slideOutroTitle    !== undefined) { state.slideOutroTitle    = p.slideOutroTitle;    slideOutroTitleIn.value  = p.slideOutroTitle; }
-    if (p.slideOutroSubtitle !== undefined) { state.slideOutroSubtitle = p.slideOutroSubtitle; slideOutroSubIn.value    = p.slideOutroSubtitle; }
-    if (p.slideOutroCta      !== undefined) { state.slideOutroCta      = p.slideOutroCta;      slideOutroCtaIn.value    = p.slideOutroCta; }
-    if (p.slideOutroBg       !== undefined) { state.slideOutroBg       = p.slideOutroBg;       slideOutroBgIn.value     = p.slideOutroBg; }
-    if (p.slideOutroAccent   !== undefined) { state.slideOutroAccent   = p.slideOutroAccent;   slideOutroAccentIn.value = p.slideOutroAccent; }
+    if (p.slideOutroBg     !== undefined) { state.slideOutroBg     = p.slideOutroBg; }
+    if (p.slideOutroAccent !== undefined) { state.slideOutroAccent = p.slideOutroAccent; }
     updateSummary();
   } catch(e) {}
 }
@@ -841,61 +827,35 @@ copyScriptBtn.addEventListener('click', () => {
 
 regenerateBtn.addEventListener('click', () => fetchNewsBtn.click());
 
-// Live sync outro settings → outro slide card
-[slideOutroTitleIn, slideOutroSubIn, slideOutroCtaIn].forEach(el => {
-  if (!el) return;
-  el.addEventListener('input', () => {
-    state.slideOutroTitle    = slideOutroTitleIn.value;
-    state.slideOutroSubtitle = slideOutroSubIn.value;
-    state.slideOutroCta      = slideOutroCtaIn.value;
-    const outroIdx = state.slides.findIndex(s => s.type === 'outro');
-    if (outroIdx >= 0) {
-      state.slides[outroIdx].title = state.slideOutroTitle;
-      state.slides[outroIdx].body  = state.slideOutroSubtitle;
-      state.slides[outroIdx].cta   = state.slideOutroCta;
-      renderAllSlides();
-    }
-  });
-});
-
-[slideOutroBgIn, slideOutroAccentIn].forEach(el => {
-  if (!el) return;
-  el.addEventListener('input', () => {
-    state.slideOutroBg     = slideOutroBgIn.value;
-    state.slideOutroAccent = slideOutroAccentIn.value;
-    if (state.slides.length) renderAllSlides();
-  });
-});
-
 // ─── SLIDE OUTRO FILE UPLOAD ──────────────────────────────────
 slideOutroMediaBrowse.addEventListener('click', () => slideOutroMediaInput.click());
-slideOutroDrop.addEventListener('click', () => slideOutroMediaInput.click());
+slideOutroDrop.addEventListener('click', e => {
+  if (e.target.closest('button') !== slideOutroMediaBrowse) return;
+  slideOutroMediaInput.click();
+});
 slideOutroMediaInput.addEventListener('change', () => {
   if (slideOutroMediaInput.files[0]) setSlideOutroMedia(slideOutroMediaInput.files[0]);
-});
-slideOutroMediaRemove.addEventListener('click', () => {
-  state.slideOutroFile     = null;
-  state.slideOutroFileType = null;
-  slideOutroMediaInput.value = '';
-  slideOutroImgPreview.src = '';
-  slideOutroVidPreview.src = '';
-  slideOutroImgPreview.hidden = true;
-  slideOutroVidPreview.hidden = true;
-  slideOutroMediaPrevWrap.hidden = true;
-  slideOutroDrop.hidden = false;
 });
 
 function setSlideOutroMedia(file) {
   const isVideo = file.type.startsWith('video/');
   state.slideOutroFile     = file;
   state.slideOutroFileType = isVideo ? 'video' : 'image';
-  const url = URL.createObjectURL(file);
-  slideOutroImgPreview.hidden = isVideo;
-  slideOutroVidPreview.hidden = !isVideo;
-  if (isVideo) { slideOutroVidPreview.src = url; }
-  else          { slideOutroImgPreview.src = url; }
-  slideOutroMediaPrevWrap.hidden = false;
-  slideOutroDrop.hidden = true;
+  const inner = slideOutroDrop.querySelector('.upload-mini-inner');
+  inner.innerHTML = `
+    <span>${isVideo ? '🎬' : '🖼'}</span>
+    <p style="word-break:break-all;font-size:0.78rem">${escHtml(file.name)}</p>
+    <button class="link-btn" id="_soChanger">Changer</button>
+    <button class="link-btn" style="color:var(--accent2)" id="_soClear">✕ Supprimer</button>
+  `;
+  inner.querySelector('#_soChanger').onclick = () => slideOutroMediaInput.click();
+  inner.querySelector('#_soClear').onclick = () => {
+    state.slideOutroFile = null; state.slideOutroFileType = null;
+    slideOutroMediaInput.value = '';
+    inner.innerHTML = `<span>📁</span><p>Image ou vidéo de fond</p>
+      <button class="link-btn" id="slide-outro-media-browse">Choisir</button>`;
+    inner.querySelector('#slide-outro-media-browse').onclick = () => slideOutroMediaInput.click();
+  };
 }
 
 // ─── SLIDE DURATION CONTROL ───────────────────────────────────
