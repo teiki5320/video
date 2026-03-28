@@ -19,6 +19,7 @@ const state = {
   stickerOpacity: 90,
   // Slide
   slides: [],
+  currentNews: [],
   slideDuration: 4,
   slideOutroTitle: '🔥 ABONNEZ-VOUS !',
   slideOutroSubtitle: "Pour plus d'actus sur l'Afrique",
@@ -51,13 +52,8 @@ const resultSection  = $('result-section');
 const resultVideo    = $('result-video');
 const downloadBtn    = $('download-btn');
 
-const titleTextInput   = $('title-text');
-const styleBtns        = document.querySelectorAll('.style-btn');
-const titleDurationIn  = $('title-duration');
-const durationDisplay  = $('duration-display');
-const titlePositionSel = $('title-position');
-const fontOverrideSel  = $('font-override');
-const titlePreviewEl   = $('title-preview');
+const styleBtns       = document.querySelectorAll('.style-btn');
+const fontOverrideSel = $('font-override');
 
 const stickerInput       = $('sticker-input');
 const stickerBrowse      = $('sticker-browse');
@@ -135,47 +131,18 @@ function setMainVideo(file) {
   updateProcessBtn();
 }
 
-// ─── TITLE PARAMS ────────────────────────────────────────────
-titleTextInput.addEventListener('input', () => {
-  state.titleText = titleTextInput.value;
-  titlePreviewEl.textContent = titleTextInput.value || 'Aperçu du titre…';
-  updateSummary();
-});
-
+// ─── STYLE PARAMS ────────────────────────────────────────────
 styleBtns.forEach(btn => {
   btn.addEventListener('click', () => {
     styleBtns.forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     state.titleStyle = btn.dataset.style;
-    updatePreview();
     updateSummary();
   });
 });
 
-function updatePreview() {
-  const btn = document.querySelector(`.style-btn[data-style="${state.titleStyle}"]`);
-  if (!btn) return;
-  titlePreviewEl.style.cssText = btn.style.cssText;
-  if (state.fontOverride) titlePreviewEl.style.fontFamily = state.fontOverride;
-  titlePreviewEl.style.fontSize     = '1.4rem';
-  titlePreviewEl.style.padding      = '8px 20px';
-  titlePreviewEl.style.borderRadius = '6px';
-  titlePreviewEl.style.transition   = 'all 0.3s';
-  titlePreviewEl.style.display      = 'inline-block';
-}
-updatePreview();
-
-titleDurationIn.addEventListener('input', () => {
-  state.titleDuration = parseFloat(titleDurationIn.value);
-  durationDisplay.textContent = state.titleDuration + ' s';
-  updateSummary();
-});
-
-titlePositionSel.addEventListener('change', () => { state.titlePosition = titlePositionSel.value; });
-
 fontOverrideSel.addEventListener('change', () => {
   state.fontOverride = fontOverrideSel.value;
-  updatePreview();
 });
 
 // ─── STICKER PARAMS ──────────────────────────────────────────
@@ -258,13 +225,7 @@ function loadSavedParams() {
   if (!raw) return;
   try {
     const p = JSON.parse(raw);
-    if (p.titleText)      { state.titleText = p.titleText; titleTextInput.value = p.titleText; titlePreviewEl.textContent = p.titleText; }
-    if (p.titleStyle)     {
-      state.titleStyle = p.titleStyle;
-      styleBtns.forEach(b => b.classList.toggle('active', b.dataset.style === p.titleStyle));
-    }
-    if (p.titleDuration)  { state.titleDuration = p.titleDuration; titleDurationIn.value = p.titleDuration; durationDisplay.textContent = p.titleDuration + ' s'; }
-    if (p.titlePosition)  { state.titlePosition = p.titlePosition; titlePositionSel.value = p.titlePosition; }
+    if (p.titleStyle)    { state.titleStyle = p.titleStyle; styleBtns.forEach(b => b.classList.toggle('active', b.dataset.style === p.titleStyle)); }
     if (p.fontOverride !== undefined) { state.fontOverride = p.fontOverride; fontOverrideSel.value = p.fontOverride; }
     if (p.stickerPosition){ state.stickerPosition = p.stickerPosition; stickerPositionSel.value = p.stickerPosition; }
     if (p.stickerSize)    { state.stickerSize = p.stickerSize; stickerSizeIn.value = p.stickerSize; stickerSizeDisplay.textContent = p.stickerSize + '%'; }
@@ -274,7 +235,6 @@ function loadSavedParams() {
     if (p.slideOutroCta      !== undefined) { state.slideOutroCta      = p.slideOutroCta;      slideOutroCtaIn.value    = p.slideOutroCta; }
     if (p.slideOutroBg       !== undefined) { state.slideOutroBg       = p.slideOutroBg;       slideOutroBgIn.value     = p.slideOutroBg; }
     if (p.slideOutroAccent   !== undefined) { state.slideOutroAccent   = p.slideOutroAccent;   slideOutroAccentIn.value = p.slideOutroAccent; }
-    updatePreview();
     updateSummary();
   } catch(e) {}
 }
@@ -637,6 +597,21 @@ const SLIDE_PALETTES = [
   { bg: 'linear-gradient(145deg,#1f0007,#3d000e)', accent: '#ff4466' },  // actu 5
 ];
 
+const HOOK_TEMPLATES = [
+  n => ({ title: "🌍 L'AFRIQUE EN CE MOMENT",
+          body: `${n[0].title}\n\nDécouvre les 5 actus qui font l'Afrique aujourd'hui. 👇` }),
+  n => ({ title: "⚡ CE QUI SE PASSE EN AFRIQUE",
+          body: `Tu savais ? ${n[0].title}\n\nSwipe pour tout savoir. 👉` }),
+  n => ({ title: "🔥 AFRIQUE : L'ESSENTIEL",
+          body: `${n[Math.floor(Math.random() * Math.min(3, n.length))].title}\n\nVoilà ce que tu dois savoir aujourd'hui. 👇` }),
+  n => ({ title: "🌐 5 ACTUS À NE PAS MANQUER",
+          body: `L'Afrique ne s'arrête pas. Voici ce qui se passe EN CE MOMENT. ⬇️` }),
+  n => ({ title: "📢 CE QUE LES MÉDIAS CACHENT",
+          body: `${n[0].title}\n\nL'Afrique mérite d'être entendue. Swipe. 👇` }),
+  n => ({ title: "🗺 L'AFRIQUE CETTE SEMAINE",
+          body: `De ${n[0].title.split(' ').slice(0,4).join(' ')}… à bien plus encore.\n\n5 actus en 60 secondes. ⬇️` }),
+];
+
 fetchNewsBtn.addEventListener('click', async () => {
   fetchNewsBtn.disabled = true;
   fetchStatus.hidden = false;
@@ -647,6 +622,7 @@ fetchNewsBtn.addEventListener('click', async () => {
 
   try {
     const news = await fetchAfriqueNews();
+    state.currentNews = news;
     buildSlides(news);
     renderAllSlides();
     slidesContainer.hidden = false;
@@ -729,6 +705,8 @@ function createSlideCard(slide, idx) {
   card.className = 'slide-card';
   card.dataset.idx = idx;
 
+  const swatchColor = slide.bgColor || '#111122';
+
   card.innerHTML = `
     <div class="slide-mini-col">
       <div class="slide-mini-preview" style="background:${previewBg}">
@@ -736,11 +714,15 @@ function createSlideCard(slide, idx) {
         <div class="slide-mini-title">${escHtml(slide.title)}</div>
         ${isOutro && slide.cta ? `<div style="position:absolute;bottom:8px;font-size:0.55rem;font-weight:800;color:${palette.accent};text-align:center;width:100%;padding:0 4px">${escHtml(slide.cta)}</div>` : ''}
       </div>
-      <button class="slide-bg-btn" data-idx="${idx}">🎨 Fond</button>
-      <div class="slide-bg-panel" hidden>
-        <input type="color" class="slide-bg-color" value="${slide.bgColor || '#111122'}" title="Couleur unie">
-        <label class="link-btn" style="cursor:pointer">🖼 Image<input type="file" accept="image/*" class="slide-bg-img-input" hidden></label>
-        <button class="link-btn slide-bg-reset">↺ Défaut</button>
+      <div class="slide-bg-controls">
+        <label class="slide-bg-ctrl" title="Couleur de fond">
+          <span class="slide-bg-swatch" style="background:${swatchColor}"></span>
+          <input type="color" class="slide-bg-color" value="${swatchColor}" hidden>
+        </label>
+        <label class="slide-bg-ctrl" title="Image de fond">
+          🖼<input type="file" accept="image/*" class="slide-bg-img-input" hidden>
+        </label>
+        <button class="slide-bg-ctrl slide-bg-reset" title="Dégradé par défaut">↺</button>
       </div>
     </div>
     <div class="slide-edit-area">
@@ -748,6 +730,7 @@ function createSlideCard(slide, idx) {
         <span class="slide-num">Slide ${idx + 1} / ${state.slides.length}</span>
         <span class="slide-type-tag">${typeLabel}</span>
         ${slide.date ? `<span class="slide-date">${escHtml(slide.date)}</span>` : ''}
+        ${slide.type === 'hook' ? `<button class="hook-regen-btn">🔄 Nouveau hook</button>` : ''}
       </div>
       <label>Titre</label>
       <div class="slide-field slide-title-field" contenteditable="true" data-field="title" data-idx="${idx}">${escHtml(slide.title)}</div>
@@ -771,22 +754,20 @@ function createSlideCard(slide, idx) {
     });
   });
 
-  // ── background panel toggle ──
-  const bgBtn   = card.querySelector('.slide-bg-btn');
-  const bgPanel = card.querySelector('.slide-bg-panel');
-  const preview = card.querySelector('.slide-mini-preview');
-  bgBtn.addEventListener('click', () => { bgPanel.hidden = !bgPanel.hidden; });
+  // ── BG controls ──
+  const preview  = card.querySelector('.slide-mini-preview');
+  const colorIn  = card.querySelector('.slide-bg-color');
+  const swatch   = card.querySelector('.slide-bg-swatch');
+  const imgInput = card.querySelector('.slide-bg-img-input');
 
-  // Color picker
-  card.querySelector('.slide-bg-color').addEventListener('input', e => {
-    slide.bgType  = 'color';
-    slide.bgColor = e.target.value;
+  colorIn.addEventListener('input', e => {
+    slide.bgType    = 'color';
+    slide.bgColor   = e.target.value;
     slide.bgImageEl = null;
-    preview.style.background = e.target.value;
+    swatch.style.background   = e.target.value;
+    preview.style.background  = e.target.value;
   });
 
-  // Image upload
-  const imgInput = card.querySelector('.slide-bg-img-input');
   imgInput.addEventListener('change', () => {
     const f = imgInput.files[0];
     if (!f) return;
@@ -797,22 +778,41 @@ function createSlideCard(slide, idx) {
         slide.bgType    = 'image';
         slide.bgImageEl = img;
         preview.style.background = `url("${ev.target.result}") center/cover`;
+        swatch.style.background  = `url("${ev.target.result}") center/cover`;
+        swatch.style.backgroundSize = 'cover';
       };
       img.src = ev.target.result;
     };
     reader.readAsDataURL(f);
   });
 
-  // Reset to gradient
   card.querySelector('.slide-bg-reset').addEventListener('click', () => {
     slide.bgType    = 'gradient';
     slide.bgImageEl = null;
-    const pal = isOutro
-      ? { bg: state.slideOutroBg }
-      : SLIDE_PALETTES[slide.paletteIdx] || SLIDE_PALETTES[0];
+    const pal = isOutro ? { bg: state.slideOutroBg } : SLIDE_PALETTES[slide.paletteIdx] || SLIDE_PALETTES[0];
     preview.style.background = pal.bg;
-    bgPanel.hidden = true;
+    swatch.style.background  = pal.bg;
+    colorIn.value = slide.bgColor || '#111122';
   });
+
+  // ── Hook regen ──
+  const regenBtn = card.querySelector('.hook-regen-btn');
+  if (regenBtn) {
+    let lastTplIdx = 0;
+    regenBtn.addEventListener('click', () => {
+      const n = state.currentNews;
+      if (!n.length) return;
+      let idx2;
+      do { idx2 = Math.floor(Math.random() * HOOK_TEMPLATES.length); } while (idx2 === lastTplIdx && HOOK_TEMPLATES.length > 1);
+      lastTplIdx = idx2;
+      const { title, body } = HOOK_TEMPLATES[idx2](n);
+      slide.title = title;
+      slide.body  = body;
+      card.querySelector('.slide-mini-title').textContent = title;
+      card.querySelector('[data-field="title"]').innerText = title;
+      card.querySelector('[data-field="body"]').innerText  = body;
+    });
+  }
 
   return card;
 }
