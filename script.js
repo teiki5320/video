@@ -828,11 +828,8 @@ copyScriptBtn.addEventListener('click', () => {
 regenerateBtn.addEventListener('click', () => fetchNewsBtn.click());
 
 // ─── SLIDE OUTRO FILE UPLOAD ──────────────────────────────────
-slideOutroMediaBrowse.addEventListener('click', () => slideOutroMediaInput.click());
-slideOutroDrop.addEventListener('click', e => {
-  if (e.target.closest('button') !== slideOutroMediaBrowse) return;
-  slideOutroMediaInput.click();
-});
+slideOutroMediaBrowse.addEventListener('click', e => { e.stopPropagation(); slideOutroMediaInput.click(); });
+slideOutroDrop.addEventListener('click', () => slideOutroMediaInput.click());
 slideOutroMediaInput.addEventListener('change', () => {
   if (slideOutroMediaInput.files[0]) setSlideOutroMedia(slideOutroMediaInput.files[0]);
 });
