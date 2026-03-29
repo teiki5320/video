@@ -891,7 +891,7 @@ async function generateSlidesVideo() {
   genSlideVideoBtn.disabled = true;
   slideProgressWrap.hidden  = false;
   slideResultSection.hidden = true;
-  slideProgressFill.style.background = 'linear-gradient(90deg,var(--accent),var(--accent2))';
+  slideProgressFill.style.background = 'linear-gradient(90deg,#8b5cf6,#60c8ff)';
 
   const W = 720, H = 1280;
 
@@ -962,7 +962,7 @@ async function generateSlidesVideo() {
     slideResultSection.hidden   = false;
     slideResultSection.scrollIntoView({ behavior: 'smooth' });
     setSlideProgress(100, '✓ Vidéo prête !');
-    slideProgressFill.style.background = '#2dce6a';
+    slideProgressFill.style.background = 'linear-gradient(90deg,#34d399,#6ee7b7)';
 
   } catch(err) {
     console.error(err);
