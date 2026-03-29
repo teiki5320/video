@@ -129,11 +129,13 @@ styleBtns.forEach(btn => {
     btn.classList.add('active');
     state.titleStyle = btn.dataset.style;
     updateSummary();
+    saveParams();
   });
 });
 
 fontOverrideSel.addEventListener('change', () => {
   state.fontOverride = fontOverrideSel.value;
+  saveParams();
 });
 
 // ─── STICKER PARAMS ──────────────────────────────────────────
@@ -160,14 +162,16 @@ stickerRemove.addEventListener('click', () => {
   updateSummary(); updateProcessBtn();
 });
 
-stickerPositionSel.addEventListener('change', () => { state.stickerPosition = stickerPositionSel.value; });
+stickerPositionSel.addEventListener('change', () => { state.stickerPosition = stickerPositionSel.value; saveParams(); });
 stickerSizeIn.addEventListener('input', () => {
   state.stickerSize = parseInt(stickerSizeIn.value);
   stickerSizeDisplay.textContent = state.stickerSize + '%';
+  saveParams();
 });
 stickerOpacityIn.addEventListener('input', () => {
   state.stickerOpacity = parseInt(stickerOpacityIn.value);
   stickerOpacityDisp.textContent = state.stickerOpacity + '%';
+  saveParams();
 });
 
 // ─── OUTRO PARAMS ────────────────────────────────────────────
@@ -195,7 +199,7 @@ outroRemove.addEventListener('click', () => {
 });
 
 // ─── SAVE PARAMS ─────────────────────────────────────────────
-saveParamsBtn.addEventListener('click', () => {
+function saveParams() {
   const toSave = {
     titleText: state.titleText, titleStyle: state.titleStyle,
     titleDuration: state.titleDuration, titlePosition: state.titlePosition,
@@ -205,6 +209,10 @@ saveParamsBtn.addEventListener('click', () => {
     slideOutroBg: state.slideOutroBg, slideOutroAccent: state.slideOutroAccent,
   };
   localStorage.setItem('vf_params', JSON.stringify(toSave));
+}
+
+saveParamsBtn.addEventListener('click', () => {
+  saveParams();
   saveFeedback.textContent = '✓ Sauvegardé !';
   setTimeout(() => { saveFeedback.textContent = ''; }, 2500);
 });
