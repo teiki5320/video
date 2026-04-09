@@ -28,6 +28,8 @@ const state = {
   slideOutroAccent: '#6c63ff',
   slideOutroFile: null,
   slideOutroFileType: null,
+  defaultBgFile: null,
+  defaultBgImageEl: null,
 };
 
 // ─── Refs DOM ───────────────────────────────────────────────
@@ -77,6 +79,11 @@ const outroRemove      = $('outro-remove');
 const slideOutroMediaInput  = $('slide-outro-media-input');
 const slideOutroMediaBrowse = $('slide-outro-media-browse');
 const slideOutroDrop        = $('slide-outro-drop');
+
+const defaultBgInput  = $('default-bg-input');
+const defaultBgBrowse = $('default-bg-browse');
+const defaultBgDrop   = $('default-bg-drop');
+const defaultBgInner  = $('default-bg-inner');
 
 const saveParamsBtn = $('save-params-btn');
 const saveFeedback  = $('save-feedback');
@@ -197,6 +204,34 @@ outroRemove.addEventListener('click', () => {
   outroDrop.hidden = false;
   updateSummary(); updateProcessBtn();
 });
+
+// ─── DEFAULT SLIDE BG ────────────────────────────────────────
+defaultBgBrowse.addEventListener('click', e => { e.stopPropagation(); defaultBgInput.click(); });
+defaultBgDrop.addEventListener('click', () => defaultBgInput.click());
+defaultBgInput.addEventListener('change', () => {
+  if (defaultBgInput.files[0]) setDefaultBg(defaultBgInput.files[0]);
+});
+
+function setDefaultBg(file) {
+  state.defaultBgFile = file;
+  const img = new Image();
+  img.onload = () => { state.defaultBgImageEl = img; };
+  img.src = URL.createObjectURL(file);
+  defaultBgInner.innerHTML = `
+    <span>🖼</span>
+    <p style="word-break:break-all;font-size:0.78rem">${escHtml(file.name)}</p>
+    <button class="link-btn" id="_bgChg">Changer</button>
+    <button class="link-btn" style="color:rgba(255,130,130,0.9)" id="_bgClr">✕ Supprimer</button>
+  `;
+  defaultBgInner.querySelector('#_bgChg').onclick = () => defaultBgInput.click();
+  defaultBgInner.querySelector('#_bgClr').onclick = () => {
+    state.defaultBgFile = null; state.defaultBgImageEl = null;
+    defaultBgInput.value = '';
+    defaultBgInner.innerHTML = `<span>📁</span><p>Image de fond par défaut</p>
+      <button class="link-btn" id="default-bg-browse">Choisir</button>`;
+    defaultBgInner.querySelector('#default-bg-browse').onclick = () => defaultBgInput.click();
+  };
+}
 
 // ─── SAVE PARAMS ─────────────────────────────────────────────
 function saveParams() {
@@ -642,7 +677,7 @@ async function fetchAfriqueNews() {
   return data.items.slice(0, 5).map(item => ({
     title: (item.title || '').trim(),
     body: (item.description || item.content || '')
-      .replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim().slice(0, 300),
+      .replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim().slice(0, 160),
     date: item.pubDate
       ? new Date(item.pubDate).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })
       : '',
@@ -651,13 +686,16 @@ async function fetchAfriqueNews() {
 
 function buildSlides(news) {
   state.slides = [];
+  const defBg = state.defaultBgImageEl
+    ? { bgType: 'image', bgImageEl: state.defaultBgImageEl }
+    : { bgType: 'gradient', bgImageEl: null };
 
   // Slide 1 – Hook
   state.slides.push({
     type: 'hook', paletteIdx: 0,
     title: "🌍 L'AFRIQUE EN CE MOMENT",
     body: `${news[0].title}\n\nDécouvre les 5 actus qui font l'Afrique aujourd'hui. 👇`,
-    bgType: 'gradient', bgColor: '#1a0035', bgImageEl: null,
+    bgColor: '#1a0035', ...defBg,
   });
 
   // Slides 2-6 – Actualités
@@ -665,7 +703,7 @@ function buildSlides(news) {
     state.slides.push({
       type: 'news', newsNum: i + 1, paletteIdx: i + 1,
       title: item.title, body: item.body, date: item.date,
-      bgType: 'gradient', bgColor: '#001a3d', bgImageEl: null,
+      bgColor: '#001a3d', ...defBg,
     });
   });
 
@@ -675,7 +713,7 @@ function buildSlides(news) {
     title: state.slideOutroTitle,
     body: state.slideOutroSubtitle,
     cta: state.slideOutroCta,
-    bgType: 'gradient', bgColor: state.slideOutroBg, bgImageEl: null,
+    bgColor: state.slideOutroBg, ...defBg,
   });
 }
 
@@ -704,7 +742,6 @@ function createSlideCard(slide, idx) {
   card.innerHTML = `
     <div class="slide-mini-col">
       <div class="slide-mini-preview" style="background:${previewBg}">
-        <span class="slide-type-badge" style="color:${palette.accent}">${typeLabel}</span>
         <div class="slide-mini-title">${escHtml(slide.title)}</div>
         ${isOutro && slide.cta ? `<div style="position:absolute;bottom:8px;font-size:0.55rem;font-weight:800;color:${palette.accent};text-align:center;width:100%;padding:0 4px">${escHtml(slide.cta)}</div>` : ''}
       </div>
@@ -1050,23 +1087,8 @@ function drawSlideCanvas(ctx, slide, W, H, stickerImg) {
 
 function drawSlideText(ctx, slide, W, H) {
   const isOutro = slide.type === 'outro';
-  const palette = isOutro
-    ? { accent: state.slideOutroAccent }
-    : SLIDE_PALETTES[slide.paletteIdx] || SLIDE_PALETTES[0];
   const ts = TITLE_STYLES[state.titleStyle] || TITLE_STYLES['bold-white'];
   const fam = state.fontOverride || ts.family;
-  const typeLabel = slide.type === 'hook' ? 'HOOK' : isOutro ? 'OUTRO' : `ACTU ${slide.newsNum}`;
-
-  // ── Type badge ──
-  const badgeSize = Math.round(W * 0.038);
-  ctx.save();
-  ctx.font = `700 ${badgeSize}px ${fam}`;
-  ctx.fillStyle = palette.accent;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'top';
-  ctx.shadowColor = 'rgba(0,0,0,0.8)'; ctx.shadowBlur = 6;
-  ctx.fillText(typeLabel, W / 2, H * 0.065);
-  ctx.restore();
 
   // ── Title ──
   const titleSize = Math.round(W * 0.082);
@@ -1079,7 +1101,7 @@ function drawSlideText(ctx, slide, W, H) {
   ctx.shadowOffsetX = ts.glow ? 0 : 2; ctx.shadowOffsetY = ts.glow ? 0 : 2;
   const titleLines = wrapText(ctx, slide.title, W * 0.86);
   const titleLineH = titleSize * 1.22;
-  let titleY = H * 0.22;
+  let titleY = H * 0.10;
   titleLines.forEach((line, i) => ctx.fillText(line, W / 2, titleY + i * titleLineH));
   const titleBottom = titleY + titleLines.length * titleLineH;
   ctx.restore();
@@ -1095,7 +1117,7 @@ function drawSlideText(ctx, slide, W, H) {
     ctx.shadowColor = 'rgba(0,0,0,0.85)'; ctx.shadowBlur = 4;
     const bodyLines = wrapText(ctx, slide.body.replace(/\n/g, ' '), W * 0.83);
     const bodyY = titleBottom + H * 0.04;
-    bodyLines.slice(0, 7).forEach((line, i) => ctx.fillText(line, W / 2, bodyY + i * bodySize * 1.5));
+    bodyLines.slice(0, 4).forEach((line, i) => ctx.fillText(line, W / 2, bodyY + i * bodySize * 1.5));
     ctx.restore();
   }
 
