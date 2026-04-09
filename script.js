@@ -28,8 +28,8 @@ const state = {
   slideOutroAccent: '#6c63ff',
   slideOutroFile: null,
   slideOutroFileType: null,
-  hookBgFile: null,
-  newsBgFile: null,
+  hookBgFile: null,    hookBgImageEl: null,
+  newsBgFile: null,    newsBgImageEl: null,
 };
 
 // ─── Refs DOM ───────────────────────────────────────────────
@@ -223,6 +223,16 @@ function makeBgHandler(input, drop, inner, stateKey, resetLabel) {
 function setBgFile(input, inner, stateKey, resetLabel) {
   const file = input.files[0];
   state[stateKey] = file;
+
+  // Pre-load Image element so mini-previews update immediately
+  const imgEl = new Image();
+  const imgKey = stateKey.replace('File', 'ImageEl'); // hookBgFile → hookBgImageEl
+  imgEl.onload = () => {
+    state[imgKey] = imgEl;
+    refreshSlidePreviews(stateKey); // update existing mini-previews
+  };
+  imgEl.src = URL.createObjectURL(file);
+
   inner.innerHTML = `
     <span>🖼</span>
     <p style="word-break:break-all;font-size:0.78rem">${escHtml(file.name)}</p>
@@ -231,12 +241,32 @@ function setBgFile(input, inner, stateKey, resetLabel) {
   `;
   inner.querySelector('#_chg').onclick = () => input.click();
   inner.querySelector('#_clr').onclick = () => {
-    state[stateKey] = null;
+    state[stateKey] = null; state[imgKey] = null;
     input.value = '';
     inner.innerHTML = `<span>📁</span><p>Image de fond</p>
       <button class="link-btn">Choisir</button>`;
     inner.querySelector('button').onclick = () => input.click();
+    refreshSlidePreviews(stateKey);
   };
+}
+
+function refreshSlidePreviews(changedKey) {
+  if (!state.slides.length) return;
+  const type = changedKey === 'hookBgFile' ? 'hook' : 'news';
+  const imgEl = changedKey === 'hookBgFile' ? state.hookBgImageEl : state.newsBgImageEl;
+  document.querySelectorAll('.slide-card').forEach(card => {
+    const idx = parseInt(card.dataset.idx);
+    const slide = state.slides[idx];
+    if (!slide || slide.type !== type) return;
+    const preview = card.querySelector('.slide-mini-preview');
+    if (imgEl) {
+      slide.bgType = 'image'; slide.bgImageEl = imgEl;
+      preview.style.background = `url("${imgEl.src}") center/cover`;
+    } else {
+      slide.bgType = 'gradient'; slide.bgImageEl = null;
+      preview.style.background = ''; // will fall back to palette color
+    }
+  });
 }
 
 makeBgHandler(hookBgInput, hookBgDrop, hookBgInner, 'hookBgFile', 'Image de fond');
@@ -471,8 +501,8 @@ async function processVideo() {
 // ─── Rendu canvas ─────────────────────────────────────────────
 
 const TITLE_STYLES = {
-  'bold-white': { color: '#ffffff', shadow: 'rgba(0,0,0,0.9)', bg: 'rgba(0,0,0,0.55)',    font: '700',    family: 'Arial, sans-serif',                      glow: false },
-  'neon-green': { color: '#39ff14', shadow: '#39ff14',          bg: 'rgba(0,0,0,0.7)',    font: '700',    family: 'Arial, sans-serif',                      glow: true  },
+  'bold-white': { color: '#ffffff', shadow: 'rgba(0,0,0,0.9)', bg: 'rgba(0,0,0,0.55)',    font: '700',    family: '"Oswald", Impact, sans-serif',            glow: false },
+  'neon-green': { color: '#39ff14', shadow: '#39ff14',          bg: 'rgba(0,0,0,0.7)',    font: '700',    family: '"Bebas Neue", Impact, sans-serif',         glow: true  },
   'cinema':     { color: '#f5c518', shadow: '#000000',          bg: 'rgba(0,0,0,0.85)',   font: '700',    family: 'Georgia, serif',                         glow: false },
   'minimal':    { color: '#eeeeee', shadow: 'rgba(0,0,0,0.3)',  bg: 'rgba(51,51,51,0.4)', font: '300',    family: 'Arial, sans-serif',                      glow: false },
   'fire':       { color: '#ff4500', shadow: '#ff6600',          bg: 'rgba(0,0,0,0.8)',    font: '700',    family: '"Arial Black", sans-serif',              glow: true  },
@@ -695,13 +725,19 @@ async function fetchAfriqueNews() {
 
 function buildSlides(news) {
   state.slides = [];
+  const hookBg = state.hookBgImageEl
+    ? { bgType: 'image', bgImageEl: state.hookBgImageEl }
+    : { bgType: 'gradient', bgImageEl: null };
+  const newsBg = state.newsBgImageEl
+    ? { bgType: 'image', bgImageEl: state.newsBgImageEl }
+    : { bgType: 'gradient', bgImageEl: null };
 
-  // Slide 1 – Hook
+  // Slide 1 – Hook (no body — title fills the slide)
   state.slides.push({
     type: 'hook', paletteIdx: 0,
     title: "🌍 L'AFRIQUE EN CE MOMENT",
-    body: `${news[0].title}\n\nDécouvre les 5 actus qui font l'Afrique aujourd'hui. 👇`,
-    bgType: 'gradient', bgColor: '#1a0035', bgImageEl: null,
+    body: '',
+    bgColor: '#1a0035', ...hookBg,
   });
 
   // Slides 2-6 – Actualités
@@ -709,7 +745,7 @@ function buildSlides(news) {
     state.slides.push({
       type: 'news', newsNum: i + 1, paletteIdx: i + 1,
       title: item.title, body: item.body, date: item.date,
-      bgType: 'gradient', bgColor: '#001a3d', bgImageEl: null,
+      bgColor: '#001a3d', ...newsBg,
     });
   });
 
@@ -880,10 +916,8 @@ regenerateBtn.addEventListener('click', () => fetchNewsBtn.click());
 
 // ─── SLIDE OUTRO FILE UPLOAD ──────────────────────────────────
 slideOutroMediaBrowse.addEventListener('click', () => slideOutroMediaInput.click());
-slideOutroDrop.addEventListener('click', e => {
-  if (e.target.closest('button') !== slideOutroMediaBrowse) return;
-  slideOutroMediaInput.click();
-});
+slideOutroDrop.addEventListener('click', () => slideOutroMediaInput.click());
+slideOutroMediaBrowse.addEventListener('click', e => { e.stopPropagation(); slideOutroMediaInput.click(); });
 slideOutroMediaInput.addEventListener('change', () => {
   if (slideOutroMediaInput.files[0]) setSlideOutroMedia(slideOutroMediaInput.files[0]);
 });
@@ -948,12 +982,12 @@ async function generateSlidesVideo() {
       stickerImg = await loadImg(URL.createObjectURL(state.stickerFile));
     }
 
-    // Slide BG images
+    // Slide BG images (reload from file to get fresh blob URL for canvas)
     const hookBgImg = state.hookBgFile ? await loadImg(URL.createObjectURL(state.hookBgFile)) : null;
     const newsBgImg = state.newsBgFile ? await loadImg(URL.createObjectURL(state.newsBgFile)) : null;
     for (const slide of state.slides) {
-      if (slide.type === 'hook' && hookBgImg) { slide.bgType = 'image'; slide.bgImageEl = hookBgImg; }
-      if (slide.type === 'news' && newsBgImg) { slide.bgType = 'image'; slide.bgImageEl = newsBgImg; }
+      if (slide.type === 'hook' && hookBgImg)  { slide.bgType = 'image'; slide.bgImageEl = hookBgImg; }
+      if (slide.type === 'news' && newsBgImg)  { slide.bgType = 'image'; slide.bgImageEl = newsBgImg; }
     }
 
     // Slide outro media
@@ -1104,34 +1138,49 @@ function drawSlideText(ctx, slide, W, H) {
   const ts = TITLE_STYLES[state.titleStyle] || TITLE_STYLES['bold-white'];
   const fam = state.fontOverride || ts.family;
 
+  const titleSize = Math.round(W * 0.072);
+  const titleLineH = titleSize * 1.15;
+  const bodySize   = Math.round(W * 0.040);
+  const bodyLineH  = bodySize * 1.6;
+  const gap        = H * 0.038;
+
+  // Measure first (two-pass for vertical centering)
+  ctx.font = `${ts.font} ${titleSize}px ${fam}`;
+  const titleLines = wrapText(ctx, slide.title, W * 0.88);
+  ctx.font = `400 ${bodySize}px ${fam}`;
+  const rawBodyLines = slide.body
+    ? wrapText(ctx, slide.body.replace(/\n/g, ' '), W * 0.84).slice(0, 4) : [];
+
+  const titleBlock = titleLines.length * titleLineH;
+  const bodyBlock  = rawBodyLines.length > 0 ? gap + rawBodyLines.length * bodyLineH : 0;
+  const totalH = titleBlock + bodyBlock;
+
+  // Vertically center, slightly above mid for visual balance
+  let titleY = Math.max(H * 0.08, (H * 0.88 - totalH) / 2);
+
   // ── Title ──
-  const titleSize = Math.round(W * 0.082);
   ctx.save();
   ctx.font = `${ts.font} ${titleSize}px ${fam}`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'top';
   ctx.fillStyle = ts.color;
-  ctx.shadowColor = ts.shadow; ctx.shadowBlur = ts.glow ? 20 : 5;
+  ctx.shadowColor = ts.shadow; ctx.shadowBlur = ts.glow ? 22 : 6;
   ctx.shadowOffsetX = ts.glow ? 0 : 2; ctx.shadowOffsetY = ts.glow ? 0 : 2;
-  const titleLines = wrapText(ctx, slide.title, W * 0.86);
-  const titleLineH = titleSize * 1.22;
-  let titleY = H * 0.10;
   titleLines.forEach((line, i) => ctx.fillText(line, W / 2, titleY + i * titleLineH));
   const titleBottom = titleY + titleLines.length * titleLineH;
   ctx.restore();
 
   // ── Body ──
-  if (slide.body) {
-    const bodySize = Math.round(W * 0.044);
+  if (rawBodyLines.length > 0) {
     ctx.save();
-    ctx.font = `${bodySize}px ${fam}`;
+    ctx.font = `400 ${bodySize}px ${fam}`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'top';
-    ctx.fillStyle = 'rgba(255,255,255,0.88)';
-    ctx.shadowColor = 'rgba(0,0,0,0.85)'; ctx.shadowBlur = 4;
-    const bodyLines = wrapText(ctx, slide.body.replace(/\n/g, ' '), W * 0.83);
-    const bodyY = titleBottom + H * 0.04;
-    bodyLines.slice(0, 4).forEach((line, i) => ctx.fillText(line, W / 2, bodyY + i * bodySize * 1.5));
+    ctx.fillStyle = 'rgba(255,255,255,0.85)';
+    ctx.shadowColor = 'rgba(0,0,0,0.9)'; ctx.shadowBlur = 5;
+    ctx.shadowOffsetX = 0; ctx.shadowOffsetY = 1;
+    const bodyY = titleBottom + gap;
+    rawBodyLines.forEach((line, i) => ctx.fillText(line, W / 2, bodyY + i * bodyLineH));
     ctx.restore();
   }
 
