@@ -28,8 +28,8 @@ const state = {
   slideOutroAccent: '#6c63ff',
   slideOutroFile: null,
   slideOutroFileType: null,
-  defaultBgFile: null,
-  defaultBgImageEl: null,
+  hookBgFile: null,
+  newsBgFile: null,
 };
 
 // ─── Refs DOM ───────────────────────────────────────────────
@@ -80,10 +80,15 @@ const slideOutroMediaInput  = $('slide-outro-media-input');
 const slideOutroMediaBrowse = $('slide-outro-media-browse');
 const slideOutroDrop        = $('slide-outro-drop');
 
-const defaultBgInput  = $('default-bg-input');
-const defaultBgBrowse = $('default-bg-browse');
-const defaultBgDrop   = $('default-bg-drop');
-const defaultBgInner  = $('default-bg-inner');
+const hookBgInput  = $('hook-bg-input');
+const hookBgBrowse = $('hook-bg-browse');
+const hookBgDrop   = $('hook-bg-drop');
+const hookBgInner  = $('hook-bg-inner');
+
+const newsBgInput  = $('news-bg-input');
+const newsBgBrowse = $('news-bg-browse');
+const newsBgDrop   = $('news-bg-drop');
+const newsBgInner  = $('news-bg-inner');
 
 const saveParamsBtn = $('save-params-btn');
 const saveFeedback  = $('save-feedback');
@@ -205,33 +210,37 @@ outroRemove.addEventListener('click', () => {
   updateSummary(); updateProcessBtn();
 });
 
-// ─── DEFAULT SLIDE BG ────────────────────────────────────────
-defaultBgBrowse.addEventListener('click', e => { e.stopPropagation(); defaultBgInput.click(); });
-defaultBgDrop.addEventListener('click', () => defaultBgInput.click());
-defaultBgInput.addEventListener('change', () => {
-  if (defaultBgInput.files[0]) setDefaultBg(defaultBgInput.files[0]);
-});
+// ─── SLIDE BG IMAGES ─────────────────────────────────────────
+function makeBgHandler(input, drop, inner, stateKey, resetLabel) {
+  const browse = inner.querySelector('button');
+  if (browse) browse.addEventListener('click', e => { e.stopPropagation(); input.click(); });
+  drop.addEventListener('click', () => input.click());
+  input.addEventListener('change', () => {
+    if (input.files[0]) setBgFile(input, inner, stateKey, resetLabel);
+  });
+}
 
-function setDefaultBg(file) {
-  state.defaultBgFile = file;
-  const img = new Image();
-  img.onload = () => { state.defaultBgImageEl = img; };
-  img.src = URL.createObjectURL(file);
-  defaultBgInner.innerHTML = `
+function setBgFile(input, inner, stateKey, resetLabel) {
+  const file = input.files[0];
+  state[stateKey] = file;
+  inner.innerHTML = `
     <span>🖼</span>
     <p style="word-break:break-all;font-size:0.78rem">${escHtml(file.name)}</p>
-    <button class="link-btn" id="_bgChg">Changer</button>
-    <button class="link-btn" style="color:rgba(255,130,130,0.9)" id="_bgClr">✕ Supprimer</button>
+    <button class="link-btn" id="_chg">Changer</button>
+    <button class="link-btn" style="color:rgba(255,130,130,0.9)" id="_clr">✕ Supprimer</button>
   `;
-  defaultBgInner.querySelector('#_bgChg').onclick = () => defaultBgInput.click();
-  defaultBgInner.querySelector('#_bgClr').onclick = () => {
-    state.defaultBgFile = null; state.defaultBgImageEl = null;
-    defaultBgInput.value = '';
-    defaultBgInner.innerHTML = `<span>📁</span><p>Image de fond par défaut</p>
-      <button class="link-btn" id="default-bg-browse">Choisir</button>`;
-    defaultBgInner.querySelector('#default-bg-browse').onclick = () => defaultBgInput.click();
+  inner.querySelector('#_chg').onclick = () => input.click();
+  inner.querySelector('#_clr').onclick = () => {
+    state[stateKey] = null;
+    input.value = '';
+    inner.innerHTML = `<span>📁</span><p>Image de fond</p>
+      <button class="link-btn">Choisir</button>`;
+    inner.querySelector('button').onclick = () => input.click();
   };
 }
+
+makeBgHandler(hookBgInput, hookBgDrop, hookBgInner, 'hookBgFile', 'Image de fond');
+makeBgHandler(newsBgInput, newsBgDrop, newsBgInner, 'newsBgFile', 'Image de fond');
 
 // ─── SAVE PARAMS ─────────────────────────────────────────────
 function saveParams() {
@@ -686,16 +695,13 @@ async function fetchAfriqueNews() {
 
 function buildSlides(news) {
   state.slides = [];
-  const defBg = state.defaultBgImageEl
-    ? { bgType: 'image', bgImageEl: state.defaultBgImageEl }
-    : { bgType: 'gradient', bgImageEl: null };
 
   // Slide 1 – Hook
   state.slides.push({
     type: 'hook', paletteIdx: 0,
     title: "🌍 L'AFRIQUE EN CE MOMENT",
     body: `${news[0].title}\n\nDécouvre les 5 actus qui font l'Afrique aujourd'hui. 👇`,
-    bgColor: '#1a0035', ...defBg,
+    bgType: 'gradient', bgColor: '#1a0035', bgImageEl: null,
   });
 
   // Slides 2-6 – Actualités
@@ -703,7 +709,7 @@ function buildSlides(news) {
     state.slides.push({
       type: 'news', newsNum: i + 1, paletteIdx: i + 1,
       title: item.title, body: item.body, date: item.date,
-      bgColor: '#001a3d', ...defBg,
+      bgType: 'gradient', bgColor: '#001a3d', bgImageEl: null,
     });
   });
 
@@ -713,7 +719,7 @@ function buildSlides(news) {
     title: state.slideOutroTitle,
     body: state.slideOutroSubtitle,
     cta: state.slideOutroCta,
-    bgColor: state.slideOutroBg, ...defBg,
+    bgType: 'gradient', bgColor: state.slideOutroBg, bgImageEl: null,
   });
 }
 
@@ -940,6 +946,14 @@ async function generateSlidesVideo() {
     let stickerImg = null;
     if (state.stickerFile) {
       stickerImg = await loadImg(URL.createObjectURL(state.stickerFile));
+    }
+
+    // Slide BG images
+    const hookBgImg = state.hookBgFile ? await loadImg(URL.createObjectURL(state.hookBgFile)) : null;
+    const newsBgImg = state.newsBgFile ? await loadImg(URL.createObjectURL(state.newsBgFile)) : null;
+    for (const slide of state.slides) {
+      if (slide.type === 'hook' && hookBgImg) { slide.bgType = 'image'; slide.bgImageEl = hookBgImg; }
+      if (slide.type === 'news' && newsBgImg) { slide.bgType = 'image'; slide.bgImageEl = newsBgImg; }
     }
 
     // Slide outro media

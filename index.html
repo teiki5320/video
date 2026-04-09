@@ -141,6 +141,8 @@
   <!-- ========== ONGLET PARAMÈTRES ========== -->
   <main id="tab-parametres" class="tab-content">
 
+    <!-- ── MONTAGE ── -->
+    <p class="params-section-label">Montage</p>
     <div class="params-grid">
 
       <!-- STYLE DES TEXTES -->
@@ -223,21 +225,6 @@
         </select>
       </section>
 
-      <!-- FOND DES SLIDES -->
-      <section class="param-card">
-        <h2>Fond des slides</h2>
-
-        <label>Image appliquée à tous les slides</label>
-        <div class="upload-mini" id="default-bg-drop">
-          <input type="file" id="default-bg-input" accept="image/*" hidden />
-          <div class="upload-mini-inner" id="default-bg-inner">
-            <span>📁</span>
-            <p>Image de fond par défaut</p>
-            <button class="link-btn" id="default-bg-browse">Choisir</button>
-          </div>
-        </div>
-      </section>
-
       <!-- STICKER -->
       <section class="param-card">
         <h2>Sticker</h2>
@@ -277,7 +264,7 @@
         </div>
       </section>
 
-      <!-- OUTRO -->
+      <!-- OUTRO MONTAGE -->
       <section class="param-card">
         <h2>Outro</h2>
 
@@ -295,8 +282,46 @@
           <video id="outro-preview" controls></video>
           <button class="btn-remove" id="outro-remove">✕ Supprimer</button>
         </div>
+      </section>
 
-        <label>Fond slide outro (image ou vidéo)</label>
+    </div>
+
+    <!-- ── SLIDE ── -->
+    <p class="params-section-label">Slide</p>
+    <div class="params-grid">
+
+      <!-- FOND INTRO -->
+      <section class="param-card">
+        <h2>Fond intro</h2>
+        <label>Première slide (accroche)</label>
+        <div class="upload-mini" id="hook-bg-drop">
+          <input type="file" id="hook-bg-input" accept="image/*" hidden />
+          <div class="upload-mini-inner" id="hook-bg-inner">
+            <span>📁</span>
+            <p>Image de fond</p>
+            <button class="link-btn" id="hook-bg-browse">Choisir</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- FOND ACTUALITÉS -->
+      <section class="param-card">
+        <h2>Fond actualités</h2>
+        <label>Slides d'actualité (×5)</label>
+        <div class="upload-mini" id="news-bg-drop">
+          <input type="file" id="news-bg-input" accept="image/*" hidden />
+          <div class="upload-mini-inner" id="news-bg-inner">
+            <span>📁</span>
+            <p>Image de fond</p>
+            <button class="link-btn" id="news-bg-browse">Choisir</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- FOND OUTRO SLIDE -->
+      <section class="param-card">
+        <h2>Fond outro slide</h2>
+        <label>Dernière slide (abonnement)</label>
         <div class="upload-mini" id="slide-outro-drop">
           <input type="file" id="slide-outro-media-input" accept="image/*,video/*" hidden />
           <div class="upload-mini-inner">
